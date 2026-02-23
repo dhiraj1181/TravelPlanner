@@ -1,0 +1,536 @@
+/* ============================================
+   TravelPro - Component Styles
+   Reusable UI Components
+   ============================================ */
+
+/* ========== Navigation Header ========== */
+.navbar {
+    /* Top navigation bar styling */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6);
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-200);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+.navbar-brand {
+    /* Logo/brand section */
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-gray-900);
+}
+
+.navbar-brand svg,
+.navbar-brand img {
+    width: 24px;
+    height: 24px;
+}
+
+/* ========== Sidebar Navigation ========== */
+.sidebar {
+    /* Left sidebar for dashboard pages */
+    width: 250px;
+    height: 100vh;
+    background-color: var(--color-white);
+    border-right: 1px solid var(--color-gray-200);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    /* Sidebar logo/brand */
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-gray-200);
+    margin-bottom: var(--space-6);
+}
+
+.sidebar-nav {
+    /* Navigation menu */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.sidebar-nav-item {
+    /* Individual nav item */
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-gray-600);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: var(--font-weight-medium);
+}
+
+.sidebar-nav-item:hover {
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-900);
+}
+
+.sidebar-nav-item.active {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+
+.sidebar-nav-item svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* User profile section in sidebar */
+.sidebar-user {
+    margin-top: auto;
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.sidebar-user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-2);
+}
+
+.sidebar-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+}
+
+.sidebar-user-details {
+    flex: 1;
+}
+
+.sidebar-user-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    font-size: var(--font-size-sm);
+}
+
+.sidebar-user-email {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+}
+
+.sidebar-logout {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-4);
+    background: none;
+    border: none;
+    color: var(--color-error);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-fast);
+}
+
+.sidebar-logout:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* ========== Auth Modal Components ========== */
+.auth-tabs {
+    /* Tab navigation for Login/Register */
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-gray-200);
+}
+
+.auth-tab {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    background: none;
+    border: none;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-500);
+    cursor: pointer;
+    position: relative;
+    transition: color var(--transition-fast);
+}
+
+.auth-tab.active {
+    color: var(--color-primary);
+}
+
+.auth-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--color-primary);
+}
+
+.auth-tab-content {
+    display: none;
+}
+
+.auth-tab-content.active {
+    display: block;
+}
+
+/* ========== Progress Indicator (Multi-step form) ========== */
+.progress-indicator {
+    /* Step progress bar for trip creation */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-8);
+    padding: 0 var(--space-4);
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    position: relative;
+}
+
+.progress-step:not(:last-child)::after {
+    /* Connection line between steps */
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    right: -50%;
+    height: 2px;
+    background-color: var(--color-gray-300);
+    z-index: -1;
+}
+
+.progress-step.completed:not(:last-child)::after {
+    background-color: var(--color-primary);
+}
+
+.progress-step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-gray-300);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--transition-base);
+}
+
+.progress-step.active .progress-step-circle {
+    background-color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+.progress-step.completed .progress-step-circle {
+    background-color: var(--color-primary);
+}
+
+.progress-step-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    text-align: center;
+}
+
+.progress-step.active .progress-step-label {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ========== Trip Cards ========== */
+.trip-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.trip-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+.trip-card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: var(--color-gray-200);
+}
+
+.trip-card-body {
+    padding: var(--space-5);
+}
+
+.trip-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.trip-card-meta {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
+.trip-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+/* ========== Empty State ========== */
+.empty-state {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-4);
+    color: var(--color-gray-400);
+}
+
+.empty-state-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-description {
+    font-size: var(--font-size-base);
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-6);
+}
+
+/* ========== Hero Section (Landing Page) ========== */
+.hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: var(--space-16) 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-12);
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+}
+
+.hero-text {
+    z-index: 2;
+}
+
+.hero-title {
+    font-size: var(--font-size-5xl);
+    margin-bottom: var(--space-4);
+    line-height: 1.1;
+}
+
+.hero-title-accent {
+    color: var(--color-primary);
+    display: block;
+}
+
+.hero-description {
+    font-size: var(--font-size-lg);
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-8);
+    line-height: var(--line-height-relaxed);
+}
+
+.hero-image {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-image img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-2xl);
+    object-fit: cover;
+    max-height: 500px;
+}
+
+/* ========== Itinerary Display ========== */
+.itinerary-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-8);
+}
+
+.itinerary-header {
+    text-align: center;
+    margin-bottom: var(--space-10);
+}
+
+.budget-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    margin-top: var(--space-4);
+}
+
+.budget-status.success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--color-success);
+}
+
+.budget-status.warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning);
+}
+
+.day-section {
+    margin-bottom: var(--space-10);
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-3);
+    border-bottom: 2px solid var(--color-gray-200);
+}
+
+.day-number {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+}
+
+.poi-card {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-4);
+    display: flex;
+    gap: var(--space-4);
+    transition: all var(--transition-fast);
+}
+
+.poi-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+}
+
+.poi-order {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+    flex-shrink: 0;
+}
+
+.poi-details {
+    flex: 1;
+}
+
+.poi-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.poi-meta {
+    display: flex;
+    gap: var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+}
+
+/* ========== Responsive Adjustments ========== */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--color-gray-200);
+    }
+
+    .hero-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-8);
+    }
+
+    .hero-image {
+        order: -1;
+    }
+
+    .progress-indicator {
+        padding: 0;
+    }
+
+    .progress-step-label {
+        font-size: var(--font-size-xs);
+    }
+}

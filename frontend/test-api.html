@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Trip API</title>
+</head>
+
+<body>
+    <h1>Test Trip Creation</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const payload = {
+                destination: "Mumbai",
+                title: "Test Trip",
+                startDate: "2026-02-20",
+                endDate: "2026-02-23",
+                budget: 5000,
+                interests: ["museum", "food"]
+            };
+
+            document.getElementById('result').textContent = 'Sending request...\n' + JSON.stringify(payload, null, 2);
+
+            try {
+                const response = await fetch('http://localhost:8080/api/trips/plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer fake-token'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.text();
+
+                document.getElementById('result').textContent += '\n\nStatus: ' + response.status + '\n\n';
+                document.getElementById('result').textContent += 'Response:\n' + result;
+
+            } catch (error) {
+                document.getElementById('result').textContent += '\n\nError: ' + error.message;
+            }
+        }
+    </script>
+</body>
+
+</html>

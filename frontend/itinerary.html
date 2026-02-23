@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View your travel itinerary">
+    <title>Your Itinerary - TravelPro</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <style>
+        body {
+            background-color: var(--color-gray-50);
+        }
+
+        .action-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: var(--space-20);
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--color-gray-300);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--space-4);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading State -->
+    <div class="loading-state" id="loadingState">
+        <div class="loading-spinner"></div>
+        <p style="color: var(--color-gray-600);">Loading your itinerary...</p>
+    </div>
+
+    <!-- Itinerary Content (hidden initially) -->
+    <div class="itinerary-container hidden" id="itineraryContent">
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <a class="back-link" onclick="window.location.href='dashboard.html'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Itinerary Header -->
+        <header class="itinerary-header">
+            <h1 id="tripTitle">Your Trip to Mumbai</h1>
+            <p id="tripDates" style="color: var(--color-gray-600); margin-bottom: var(--space-4);"></p>
+
+            <!-- Budget Status Badge -->
+            <div class="budget-status success" id="budgetStatus">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <span id="budgetStatusText">Within Budget</span>
+            </div>
+
+            <div style="margin-top: var(--space-4); font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                <strong>Total Budget:</strong> ₹<span id="totalBudget">0</span> •
+                <strong>Estimated Cost:</strong> ₹<span id="estimatedCost">0</span>
+            </div>
+        </header>
+
+        <!-- Day-by-Day Itinerary -->
+        <div id="itineraryDays">
+            <!-- Days will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/itinerary.js"></script>
+</body>
+
+</html>

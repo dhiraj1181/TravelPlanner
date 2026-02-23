@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Discover amazing places near you">
+    <title>Discover Destinations - TravelPro</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <style>
+        body {
+            display: flex;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: var(--space-8);
+            background-color: var(--color-gray-50);
+            min-height: 100vh;
+        }
+
+        .page-header {
+            margin-bottom: var(--space-8);
+        }
+
+        .page-header h1 {
+            margin-bottom: var(--space-2);
+        }
+
+        .page-header p {
+            color: var(--color-gray-600);
+            font-size: var(--font-size-lg);
+        }
+
+        .filter-section {
+            background: var(--color-white);
+            padding: var(--space-6);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-6);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--space-3);
+            margin-top: var(--space-4);
+        }
+
+        .filter-chip {
+            padding: var(--space-3) var(--space-4);
+            border: 2px solid var(--color-gray-300);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-align: center;
+            font-size: var(--font-size-sm);
+            background: var(--color-white);
+        }
+
+        .filter-chip:hover {
+            border-color: var(--color-primary);
+            background-color: rgba(45, 95, 63, 0.05);
+        }
+
+        .filter-chip.active {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .location-status {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4);
+            background: var(--color-secondary-light);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-6);
+        }
+
+        .location-status.loading {
+            background: var(--color-gray-100);
+        }
+
+        .location-status.error {
+            background: #fee;
+        }
+
+        .destinations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--space-6);
+        }
+
+        .destination-card {
+            background: var(--color-white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+            cursor: pointer;
+        }
+
+        .destination-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .destination-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        .destination-content {
+            padding: var(--space-5);
+        }
+
+        .destination-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-2);
+            color: var(--color-gray-900);
+        }
+
+        .destination-type {
+            display: inline-block;
+            padding: var(--space-1) var(--space-3);
+            background: var(--color-secondary-light);
+            color: var(--color-primary);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--space-3);
+        }
+
+        .destination-meta {
+            display: flex;
+            gap: var(--space-4);
+            margin-top: var(--space-3);
+            color: var(--color-gray-600);
+            font-size: var(--font-size-sm);
+        }
+
+        .destination-meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: var(--space-16);
+            color: var(--color-gray-600);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-16);
+            color: var(--color-gray-600);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: var(--space-4);
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .destinations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
+                    fill="currentColor" />
+            </svg>
+            <span
+                style="font-family: var(--font-family-heading); font-weight: var(--font-weight-bold); font-size: var(--font-size-xl);">TravelPro</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Dashboard
+            </a>
+
+            <a href="destinations.html" class="sidebar-nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"
+                        fill="currentColor" />
+                </svg>
+                Destinations
+            </a>
+
+            <a href="#wishlist" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M20.84 4.61C20.3292 4.09944 19.7228 3.69533 19.0554 3.4208C18.3879 3.14626 17.6725 3.00672 16.95 3.00672C16.2275 3.00672 15.5121 3.14626 14.8446 3.4208C14.1772 3.69533 13.5708 4.09944 13.06 4.61L12 5.67L10.94 4.61C9.90831 3.57831 8.50903 3.00085 7.05 3.00085C5.59096 3.00085 4.19169 3.57831 3.16 4.61C2.12831 5.64169 1.55085 7.04097 1.55085 8.5C1.55085 9.95903 2.12831 11.3583 3.16 12.39L4.22 13.45L12 21.23L19.78 13.45L20.84 12.39C21.3506 11.8792 21.7547 11.2728 22.0292 10.6054C22.3037 9.93789 22.4433 9.2225 22.4433 8.5C22.4433 7.7775 22.3037 7.06211 22.0292 6.39461C21.7547 5.72711 21.3506 5.12075 20.84 4.61Z"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Wishlist
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-avatar" id="userAvatar">D</div>
+                <div class="sidebar-user-details">
+                    <div class="sidebar-user-name" id="userName">User</div>
+                    <div class="sidebar-user-email" id="userEmail">user@example.com</div>
+                </div>
+            </div>
+            <button class="sidebar-logout" id="logoutBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1>Discover Destinations</h1>
+            <p>Enter any Indian city and explore amazing places based on your interests</p>
+        </div>
+
+        <!-- City Search Input -->
+        <div class="filter-section">
+            <h3>🗺️ Search Indian City</h3>
+            <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4);">
+                <input type="text" id="cityInput" class="form-input"
+                    placeholder="Enter city name (e.g., Mumbai, Delhi, Goa, Jaipur...)"
+                    style="flex: 1; padding: var(--space-3) var(--space-4); border: 2px solid var(--color-gray-300); border-radius: var(--radius-md); font-size: var(--font-size-base);" />
+                <button id="searchBtn" class="btn btn-primary"
+                    style="padding: var(--space-3) var(--space-6); white-space: nowrap;">
+                    🔍 Search Places
+                </button>
+            </div>
+            <p style="margin-top: var(--space-2); color: var(--color-gray-600); font-size: var(--font-size-sm);">
+                Popular cities: Mumbai, Delhi, Bangalore, Goa, Jaipur, Chennai, Kolkata, Hyderabad
+            </p>
+        </div>
+
+        <!-- Interest Filters -->
+        <div class="filter-section">
+            <h3>Filter by Interests</h3>
+            <div class="filter-grid" id="interestFilters">
+                <button class="filter-chip" data-interest="museum">🏛️ Museums</button>
+                <button class="filter-chip" data-interest="food">🍜 Food & Dining</button>
+                <button class="filter-chip" data-interest="adventure">🏔️ Adventure</button>
+                <button class="filter-chip" data-interest="culture">🎭 Culture</button>
+                <button class="filter-chip" data-interest="nature">🌳 Nature</button>
+                <button class="filter-chip" data-interest="shopping">🛍️ Shopping</button>
+                <button class="filter-chip" data-interest="nightlife">🌃 Nightlife</button>
+                <button class="filter-chip" data-interest="history">📜 History</button>
+            </div>
+        </div>
+
+        <!-- Destinations Grid -->
+        <div id="destinationsContainer">
+            <div class="loading-spinner">
+                <p>Loading destinations...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/destinations.js"></script>
+</body>
+
+</html>

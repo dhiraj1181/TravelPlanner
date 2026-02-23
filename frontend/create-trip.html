@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create your personalized travel itinerary">
+    <title>Create New Trip - TravelPro</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <style>
+        /* Page-specific layout styles */
+        body {
+            display: flex;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: var(--space-8);
+            background-color: var(--color-gray-50);
+            min-height: 100vh;
+        }
+
+        .form-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: var(--color-white);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-10);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--color-gray-600);
+            margin-bottom: var(--space-6);
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            transition: color var(--transition-fast);
+        }
+
+        .back-link:hover {
+            color: var(--color-primary);
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--space-8);
+            padding-top: var(--space-6);
+            border-top: 1px solid var(--color-gray-200);
+        }
+
+        .interests-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-3);
+        }
+
+        .interest-option {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3);
+            border: 2px solid var(--color-gray-300);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .interest-option:hover {
+            border-color: var(--color-primary);
+            background-color: rgba(45, 95, 63, 0.05);
+        }
+
+        .interest-option input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .interest-option.checked {
+            border-color: var(--color-primary);
+            background-color: rgba(45, 95, 63, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .interests-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ========== Sidebar Navigation (Same as Dashboard) ========== -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
+                    fill="currentColor" />
+            </svg>
+            <span
+                style="font-family: var(--font-family-heading); font-weight: var(--font-weight-bold); font-size: var(--font-size-xl);">TravelPro</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Dashboard
+            </a>
+
+            <a href="destinations.html" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"
+                        fill="currentColor" />
+                </svg>
+                Destinations
+            </a>
+
+            <a href="#wishlist" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M20.84 4.61C20.3292 4.09944 19.7228 3.69533 19.0554 3.4208C18.3879 3.14626 17.6725 3.00672 16.95 3.00672C16.2275 3.00672 15.5121 3.14626 14.8446 3.4208C14.1772 3.69533 13.5708 4.09944 13.06 4.61L12 5.67L10.94 4.61C9.90831 3.57831 8.50903 3.00085 7.05 3.00085C5.59096 3.00085 4.19169 3.57831 3.16 4.61C2.12831 5.64169 1.55085 7.04097 1.55085 8.5C1.55085 9.95903 2.12831 11.3583 3.16 12.39L4.22 13.45L12 21.23L19.78 13.45L20.84 12.39C21.3506 11.8792 21.7547 11.2728 22.0292 10.6054C22.3037 9.93789 22.4433 9.2225 22.4433 8.5C22.4433 7.7775 22.3037 7.06211 22.0292 6.39461C21.7547 5.72711 21.3506 5.12075 20.84 4.61Z"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Wishlist
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-avatar" id="userAvatar">D</div>
+                <div class="sidebar-user-details">
+                    <div class="sidebar-user-name" id="userName">Dhiraj_verma</div>
+                    <div class="sidebar-user-email" id="userEmail">dhirajverma@gmail.com</div>
+                </div>
+            </div>
+            <button class="sidebar-logout" id="logoutBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- ========== Main Content Area ========== -->
+    <main class="main-content">
+        <div class="form-container">
+            <!-- Back link -->
+            <a class="back-link" onclick="window.location.href='dashboard.html'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Back
+            </a>
+
+            <!-- Form Header -->
+            <div class="form-header">
+                <h1>Create New Trip</h1>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-step active" data-step="1">
+                    <div class="progress-step-circle">1</div>
+                    <span class="progress-step-label">Basic Info</span>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="progress-step-circle">2</div>
+                    <span class="progress-step-label">Dates & Budget</span>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="progress-step-circle">3</div>
+                    <span class="progress-step-label">Interests</span>
+                </div>
+            </div>
+
+            <!-- Multi-Step Form -->
+            <form id="tripForm">
+                <!-- Step 1: Basic Information -->
+                <div class="step-content active" data-step="1">
+                    <h3 class="mb-6">Basic Information</h3>
+
+                    <div class="form-group">
+                        <label for="destination" class="required">Destination</label>
+                        <input type="text" id="destination" name="destination" placeholder="e.g., Tokyo, Japan"
+                            required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tripTitle" class="required">Trip Title</label>
+                        <input type="text" id="tripTitle" name="tripTitle" placeholder="e.g., Summer Vacation 2025"
+                            required />
+                    </div>
+                </div>
+
+                <!-- Step 2: Trip Dates & Budget -->
+                <div class="step-content" data-step="2">
+                    <h3 class="mb-6">Trip Dates & Budget</h3>
+
+                    <div class="form-group">
+                        <label for="startDate" class="required">Start Date</label>
+                        <input type="date" id="startDate" name="startDate" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate" class="required">End Date</label>
+                        <input type="date" id="endDate" name="endDate" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="budget" class="required">Budget (USD)</label>
+                        <input type="number" id="budget" name="budget" placeholder="e.g., 2000" min="100" required />
+                    </div>
+                </div>
+
+                <!-- Step 3: Interests -->
+                <div class="step-content" data-step="3">
+                    <h3 class="mb-6">Select Your Interests</h3>
+                    <p class="mb-6" style="color: var(--color-gray-600);">
+                        Choose at least one interest to personalize your itinerary
+                    </p>
+
+                    <div class="interests-grid">
+                        <label class="interest-option" for="museum">
+                            <input type="checkbox" name="interests" value="museum" />
+                            <span>🏛️ Museums</span>
+                        </label>
+                        <label class="interest-option" for="food">
+                            <input type="checkbox" name="interests" value="food" />
+                            <span>🍜 Food & Dining</span>
+                        </label>
+                        <label class="interest-option" for="adventure">
+                            <input type="checkbox" name="interests" value="adventure" />
+                            <span>🏔️ Adventure</span>
+                        </label>
+                        <label class="interest-option" for="culture">
+                            <input type="checkbox" name="interests" value="culture" />
+                            <span>🎭 Culture</span>
+                        </label>
+                        <label class="interest-option" for="nature">
+                            <input type="checkbox" name="interests" value="nature" />
+                            <span>🌳 Nature</span>
+                        </label>
+                        <label class="interest-option" for="shopping">
+                            <input type="checkbox" name="interests" value="shopping" />
+                            <span>🛍️ Shopping</span>
+                        </label>
+                        <label class="interest-option" for="nightlife">
+                            <input type="checkbox" name="interests" value="nightlife" />
+                            <span>🌃 Nightlife</span>
+                        </label>
+                        <label class="interest-option" for="history">
+                            <input type="checkbox" name="interests" value="history" />
+                            <span>📜 History</span>
+                        </label>
+                    </div>
+
+                    <div id="interestError" class="error-message hidden">
+                        Please select at least one interest
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="prevBtn" style="visibility: hidden;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">
+                        Next
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/trip-planner.js"></script>
+</body>
+
+</html>
