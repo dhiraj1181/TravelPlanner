@@ -99,14 +99,26 @@
                 Destinations
             </a>
 
-            <a href="#wishlist" class="sidebar-nav-item">
-                <!-- Heart icon -->
+            <a href="wishlist.html" class="sidebar-nav-item">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
                         d="M20.84 4.61C20.3292 4.09944 19.7228 3.69533 19.0554 3.4208C18.3879 3.14626 17.6725 3.00672 16.95 3.00672C16.2275 3.00672 15.5121 3.14626 14.8446 3.4208C14.1772 3.69533 13.5708 4.09944 13.06 4.61L12 5.67L10.94 4.61C9.90831 3.57831 8.50903 3.00085 7.05 3.00085C5.59096 3.00085 4.19169 3.57831 3.16 4.61C2.12831 5.64169 1.55085 7.04097 1.55085 8.5C1.55085 9.95903 2.12831 11.3583 3.16 12.39L4.22 13.45L12 21.23L19.78 13.45L20.84 12.39C21.3506 11.8792 21.7547 11.2728 22.0292 10.6054C22.3037 9.93789 22.4433 9.2225 22.4433 8.5C22.4433 7.7775 22.3037 7.06211 22.0292 6.39461C21.7547 5.72711 21.3506 5.12075 20.84 4.61Z"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 Wishlist
+            </a>
+
+            <a href="trip-history.html" class="sidebar-nav-item">
+                <!-- History clock icon -->
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M3.05 11A9 9 0 1 0 4 7.5L1 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M1 3V7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Trip History
             </a>
         </nav>
 
@@ -239,28 +251,18 @@
         }
 
         /**
-         * Load user's trips from backend API
+         * Load user's trips from localStorage
          */
-        async function loadTrips() {
-            try {
-                // For now, use mock data
-                // TODO: Replace with actual API call
-                const trips = JSON.parse(localStorage.getItem('userTrips') || '[]');
+        function loadTrips() {
+            const trips = JSON.parse(localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.USER_TRIPS) || '[]');
 
-                if (trips.length === 0) {
-                    // Show empty state
-                    document.getElementById('emptyState').classList.remove('hidden');
-                    document.getElementById('tripsGrid').classList.add('hidden');
-                } else {
-                    // Hide empty state and show trips
-                    document.getElementById('emptyState').classList.add('hidden');
-                    document.getElementById('tripsGrid').classList.remove('hidden');
-
-                    // Render trips
-                    renderTrips(trips);
-                }
-            } catch (error) {
-                console.error('Error loading trips:', error);
+            if (!trips || trips.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('tripsGrid').classList.add('hidden');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('tripsGrid').classList.remove('hidden');
+                renderTrips(trips);
             }
         }
 

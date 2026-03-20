@@ -89,14 +89,39 @@ POI_DATABASE = {
     
     # Generic fallback for unknown destinations
     "default": [
-        {"name": "City Museum", "type": "museum", "cost": 300, "duration": 2, "lat": 0.0, "lon": 0.0, "interests": ["museum", "culture"]},
-        {"name": "Historical Monument", "type": "culture", "cost": 200, "duration": 1, "lat": 0.0, "lon": 0.0, "interests": ["culture", "history"]},
-        {"name": "Local Restaurant", "type": "food", "cost": 600, "duration": 2, "lat": 0.0, "lon": 0.0, "interests": ["food"]},
-        {"name": "Shopping District", "type": "shopping", "cost": 800, "duration": 2, "lat": 0.0, "lon": 0.0, "interests": ["shopping"]},
-        {"name": "City Park", "type": "nature", "cost": 0, "duration": 1, "lat": 0.0, "lon": 0.0, "interests": ["nature"]},
-        {"name": "Evening Entertainment", "type": "nightlife", "cost": 1000, "duration": 3, "lat": 0.0, "lon": 0.0, "interests": ["nightlife"]},
-    ]
+        {"name": "City Museum",          "type": "museum",    "cost": 300,  "duration": 2, "lat": 0.0, "lon": 0.0, "interests": ["museum", "culture"],   "osm_id": "mock_museum_1"},
+        {"name": "Historical Monument",  "type": "culture",   "cost": 200,  "duration": 1, "lat": 0.0, "lon": 0.0, "interests": ["culture", "history"],   "osm_id": "mock_culture_1"},
+        {"name": "Local Restaurant",     "type": "food",      "cost": 600,  "duration": 2, "lat": 0.0, "lon": 0.0, "interests": ["food"],                 "osm_id": "mock_food_1"},
+        {"name": "Shopping District",    "type": "shopping",  "cost": 800,  "duration": 2, "lat": 0.0, "lon": 0.0, "interests": ["shopping"],             "osm_id": "mock_shopping_1"},
+        {"name": "City Park",            "type": "nature",    "cost": 0,    "duration": 1, "lat": 0.0, "lon": 0.0, "interests": ["nature"],               "osm_id": "mock_nature_1"},
+        {"name": "Evening Entertainment","type": "nightlife", "cost": 1000, "duration": 3, "lat": 0.0, "lon": 0.0, "interests": ["nightlife"],            "osm_id": "mock_night_1"},
+    ],
+
+    # Ranchi fallback (used when Overpass API is down / timing out)
+    "ranchi": [
+        {"name": "Morabadi Museum",        "type": "museum",    "cost": 100,  "duration": 2, "lat": 23.3694, "lon": 85.3213, "interests": ["museum", "culture"],           "osm_id": "mock_rch_1"},
+        {"name": "Jagannath Temple",       "type": "culture",   "cost": 0,    "duration": 1, "lat": 23.3441, "lon": 85.3096, "interests": ["culture", "history"],          "osm_id": "mock_rch_2"},
+        {"name": "Tagore Hill",            "type": "nature",    "cost": 50,   "duration": 2, "lat": 23.3551, "lon": 85.3044, "interests": ["nature", "adventure"],         "osm_id": "mock_rch_3"},
+        {"name": "Rock Garden",            "type": "nature",    "cost": 50,   "duration": 2, "lat": 23.3831, "lon": 85.3329, "interests": ["nature", "adventure"],         "osm_id": "mock_rch_4"},
+        {"name": "Birsa Zoological Park",  "type": "nature",    "cost": 80,   "duration": 3, "lat": 23.3193, "lon": 85.2817, "interests": ["nature"],                      "osm_id": "mock_rch_5"},
+        {"name": "Hundru Falls",           "type": "adventure", "cost": 50,   "duration": 4, "lat": 23.4503, "lon": 85.6003, "interests": ["nature", "adventure"],         "osm_id": "mock_rch_6"},
+        {"name": "Dassam Falls",           "type": "adventure", "cost": 50,   "duration": 4, "lat": 23.2540, "lon": 85.6140, "interests": ["nature", "adventure"],         "osm_id": "mock_rch_7"},
+        {"name": "Jonha Falls",            "type": "nature",    "cost": 30,   "duration": 3, "lat": 23.3145, "lon": 85.5773, "interests": ["nature", "adventure"],         "osm_id": "mock_rch_8"},
+        {"name": "Ranchi Lake",            "type": "nature",    "cost": 0,    "duration": 2, "lat": 23.3448, "lon": 85.3094, "interests": ["nature"],                      "osm_id": "mock_rch_9"},
+        {"name": "Rajrappa Temple",        "type": "culture",   "cost": 0,    "duration": 3, "lat": 23.6460, "lon": 85.7358, "interests": ["culture", "history"],          "osm_id": "mock_rch_10"},
+        {"name": "Pahari Mandir",          "type": "culture",   "cost": 0,    "duration": 1, "lat": 23.3644, "lon": 85.3406, "interests": ["culture", "history"],          "osm_id": "mock_rch_11"},
+        {"name": "Ranchi Science Centre",  "type": "museum",    "cost": 100,  "duration": 2, "lat": 23.3723, "lon": 85.3813, "interests": ["museum", "culture"],           "osm_id": "mock_rch_12"},
+        {"name": "Kanke Dam",              "type": "nature",    "cost": 0,    "duration": 2, "lat": 23.4175, "lon": 85.3183, "interests": ["nature"],                      "osm_id": "mock_rch_13"},
+        {"name": "Upper Bazar Market",     "type": "shopping",  "cost": 500,  "duration": 2, "lat": 23.3492, "lon": 85.3241, "interests": ["shopping"],                    "osm_id": "mock_rch_14"},
+        {"name": "Dhurwa Dam",             "type": "nature",    "cost": 0,    "duration": 2, "lat": 23.2985, "lon": 85.3090, "interests": ["nature"],                      "osm_id": "mock_rch_15"},
+        {"name": "ISKCON Ranchi",          "type": "culture",   "cost": 0,    "duration": 1, "lat": 23.3850, "lon": 85.3341, "interests": ["culture", "history"],          "osm_id": "mock_rch_16"},
+        {"name": "Ratu Palace",            "type": "history",   "cost": 100,  "duration": 2, "lat": 23.4456, "lon": 85.2623, "interests": ["history", "culture"],          "osm_id": "mock_rch_17"},
+        {"name": "Hatia Lake",             "type": "nature",    "cost": 0,    "duration": 1, "lat": 23.3090, "lon": 85.2754, "interests": ["nature"],                      "osm_id": "mock_rch_18"},
+        {"name": "Lalpur Night Market",    "type": "nightlife", "cost": 400,  "duration": 2, "lat": 23.3479, "lon": 85.3393, "interests": ["nightlife", "food"],           "osm_id": "mock_rch_19"},
+        {"name": "Main Road Food Street",  "type": "food",      "cost": 600,  "duration": 2, "lat": 23.3536, "lon": 85.3147, "interests": ["food"],                        "osm_id": "mock_rch_20"},
+    ],
 }
+
 
 
 def get_pois_for_destination(destination: str, interests: List[str], use_api: bool = True) -> List[Dict]:
@@ -155,7 +180,7 @@ def _get_pois_from_osm_with_cache(destination: str, interests: List[str]) -> Lis
         
         # Step 2: Cache miss - fetch from OSM API
         logger.info(f"Cache miss for {destination}, fetching from OSM")
-        pois = osm.fetch_pois_for_city(destination, interests, radius_km=80, limit=100)
+        pois = osm.fetch_pois_for_city(destination, interests, radius_km=50, limit=250)
         
         if not pois:
             logger.warning(f"No POIs fetched from OSM for {destination}")
@@ -175,7 +200,7 @@ def _get_pois_from_osm_with_cache(destination: str, interests: List[str]) -> Lis
             from app.services.osm_service import get_osm_service
             logger.warning("Database cache failed, trying OSM directly")
             osm = get_osm_service()
-            pois = osm.fetch_pois_for_city(destination, interests, radius_km=20, limit=100)
+            pois = osm.fetch_pois_for_city(destination, interests, radius_km=20, limit=250)
             if pois:
                 logger.info(f"Successfully fetched {len(pois)} POIs from OSM (no cache)")
                 return pois

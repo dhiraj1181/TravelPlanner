@@ -57,7 +57,8 @@ public class TripService {
                 request.getDestination(),
                 days,
                 request.getBudget(),
-                request.getInterests());
+                request.getInterests(),
+                userId); // Pass userId for personalized POI recommendations
 
         // 4. Call ML Engine to generate itinerary
         MLEngineResponse mlResponse = mlEngineClient.generateItinerary(mlRequest);
@@ -131,5 +132,24 @@ public class TripService {
         }
 
         return trip;
+    }
+
+    /**
+     * Delete a trip by ID
+     *
+     * @param tripId - Trip's ID
+     * @param userId - User's ID (for authorization check)
+     */
+    @Transactional
+    public void deleteTrip(Long tripId, Long userId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new RuntimeException("Trip not found with ID: " + tripId));
+
+        if (!trip.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: trip does not belong to this user");
+        }
+
+        tripRepository.delete(trip);
+        log.info("Trip {} deleted by user {}", tripId, userId);
     }
 }

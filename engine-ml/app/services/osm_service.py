@@ -10,8 +10,13 @@ import time
 
 logger = logging.getLogger(__name__)
 
-# Overpass API endpoint
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Overpass API mirrors — tried in order; first success wins
+OVERPASS_MIRRORS = [
+    "https://overpass-api.de/api/interpreter",          # primary
+    "https://overpass.kumi.systems/api/interpreter",    # EU mirror
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",  # Russian mirror
+    "https://overpass.openstreetmap.ru/api/interpreter", # RU mirror
+]
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 # Interest to OSM tags mapping
@@ -179,7 +184,7 @@ class OSMService:
             return None
     
     def fetch_pois_for_city(self, city_name: str, interests: List[str], 
-                           radius_km: float = 50, limit: int = 100) -> List[Dict]:
+                           radius_km: float = 50, limit: int = 250) -> List[Dict]:
         """
         Fetch POIs from OpenStreetMap Overpass API
         
@@ -212,30 +217,52 @@ class OSMService:
         
         try:
             logger.info(f"Fetching POIs for {city_name} from Overpass API")
-            logger.debug(f"Query: {query[:200]}...")  # Log first 200 chars
-            
-            response = self.session.post(
-                OVERPASS_URL, 
-                data={'data': query},
-                timeout=60  # Increased from 30 to 60 seconds
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            pois = self._parse_overpass_response(data, city_name, interests)
-            
-            # Limit results
-            pois = pois[:limit]
-            
-            logger.info(f"Fetched {len(pois)} POIs for {city_name}")
-            return pois
-            
-        except requests.exceptions.Timeout as e:
-            logger.error(f"Overpass API timeout for {city_name}: {e}")
-            return []
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"Overpass API HTTP error for {city_name}: {e}")
-            return []
+            logger.debug(f"Query: {query[:200]}...")
+
+            pois = None
+            for mirror_idx, mirror_url in enumerate(OVERPASS_MIRRORS):
+                try:
+                    logger.info(
+                        f"Trying Overpass mirror {mirror_idx + 1}/{len(OVERPASS_MIRRORS)}: "
+                        f"{mirror_url.split('/')[2]}"
+                    )
+                    response = self.session.post(
+                        mirror_url,
+                        data={'data': query},
+                        timeout=45
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    pois = self._parse_overpass_response(
+                        data, city_name, interests,
+                        city_lat=coords['lat'], city_lon=coords['lon']
+                    )
+                    if pois:
+                        logger.info(
+                            f"Fetched {len(pois)} POIs from "
+                            f"{mirror_url.split('/')[2]}"
+                        )
+                        break
+                    logger.warning("Mirror returned 0 POIs, trying next...")
+
+                except requests.exceptions.Timeout:
+                    logger.warning(
+                        f"Mirror {mirror_url.split('/')[2]} timed out, trying next..."
+                    )
+                    if mirror_idx < len(OVERPASS_MIRRORS) - 1:
+                        time.sleep(2)
+                except requests.exceptions.HTTPError as e:
+                    logger.warning(
+                        f"Mirror {mirror_url.split('/')[2]} HTTP error: {e}, trying next..."
+                    )
+                    if mirror_idx < len(OVERPASS_MIRRORS) - 1:
+                        time.sleep(2)
+
+            if not pois:
+                logger.error("All Overpass mirrors failed or returned no data")
+                return []
+            return pois[:limit]
+
         except Exception as e:
             logger.error(f"Error fetching POIs from Overpass: {e}", exc_info=True)
             return []
@@ -248,47 +275,98 @@ class OSMService:
                 tags.extend(INTEREST_TAG_MAP[interest])
         return tags
     
-    def _build_overpass_query(self, lat: float, lon: float, 
+    def _build_overpass_query(self, lat: float, lon: float,
                               radius_m: int, tags: List[str]) -> str:
         """
-        Build Overpass QL query
-        
-        Query format searches for nodes and ways within radius that match any of the tags
+        Build an optimised Overpass QL query.
+
+        Uses `nwr` (node + way + relation in one keyword) instead of
+        separate `node` + `way` lines, halving the number of sub-queries:
+
+          Before: 34 tags × 2 (node+way)  = 68 sub-queries  ← times out
+          After:  34 tags × 1 (nwr)       = 34 sub-queries  ← fast
+
+        Timeout set to 25 s so failures surface quickly instead of
+        hanging for a full minute.
         """
-        # Build individual queries for each tag
         queries = []
         for tag in tags:
             key, value = tag.split('=')
-            queries.append(f'node["{key}"="{value}"](around:{radius_m},{lat},{lon});')
-            queries.append(f'way["{key}"="{value}"](around:{radius_m},{lat},{lon});')
-        
-        # Combine into single query
-        query = f"""
-        [out:json][timeout:55];
-        (
-          {chr(10).join('  ' + q for q in queries)}
-        );
-        out center;
-        """
-        
+            queries.append(
+                f'nwr["{key}"="{value}"](around:{radius_m},{lat},{lon});'
+            )
+
+        query = (
+            f"[out:json][timeout:25];\n"
+            f"(\n"
+            + "\n".join(f"  {q}" for q in queries)
+            + "\n);\nout center;"
+        )
         return query
     
-    def _parse_overpass_response(self, data: Dict, city: str, 
-                                 interests: List[str]) -> List[Dict]:
-        """Parse Overpass API response into POI format"""
+    # Common generic single-word names that are not real POI names
+    _JUNK_NAMES = {
+        'shop', 'store', 'restaurant', 'hotel', 'cafe', 'bar', 'atm',
+        'bank', 'hospital', 'school', 'college', 'office', 'market',
+        'temple', 'church', 'mosque', 'mandir', 'masjid', 'parking',
+        'petrol', 'fuel', 'null', 'none', 'unnamed', 'unknown',
+    }
+
+    def _is_good_name(self, name: str) -> bool:
+        """Return False for low-quality POI names that are generic/meaningless."""
+        if not name or len(name.strip()) < 3:
+            return False
+        stripped = name.strip()
+        # Pure numeric names (e.g. "123", "A-45")
+        if stripped.replace('-', '').replace(' ', '').isdigit():
+            return False
+        # Single-word generic nouns
+        if stripped.lower() in self._JUNK_NAMES:
+            return False
+        return True
+
+    def _within_city_radius(self, lat: float, lon: float,
+                            city_lat: float, city_lon: float,
+                            max_km: float = 60.0) -> bool:
+        """Return True if (lat,lon) is within max_km of city centre."""
+        import math
+        R = 6371.0
+        phi1, phi2 = math.radians(city_lat), math.radians(lat)
+        dphi = math.radians(lat - city_lat)
+        dlam = math.radians(lon - city_lon)
+        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
+        dist = R * 2 * math.asin(math.sqrt(a))
+        return dist <= max_km
+
+    def _parse_overpass_response(self, data: Dict, city: str,
+                                 interests: List[str],
+                                 city_lat: float = None,
+                                 city_lon: float = None) -> List[Dict]:
+        """
+        Parse Overpass API response into POI format.
+
+        Quality filters applied:
+          1. Must have a name
+          2. Name must pass _is_good_name (not generic/numeric)
+          3. Coordinates must be within 60 km of city centre
+             (catches wrong-continent centre points for large OSM ways)
+        """
         pois = []
-        
+        skipped_coord = 0
+        skipped_name = 0
+
         elements = data.get('elements', [])
-        
+
         for elem in elements:
             tags = elem.get('tags', {})
-            
-            # Skip if no name
+
+            # ── Filter 1: Must have a usable name ─────────────────────────
             name = tags.get('name')
-            if not name:
+            if not name or not self._is_good_name(name):
+                skipped_name += 1
                 continue
-            
-            # Get coordinates
+
+            # ── Filter 2: Resolve coordinates ──────────────────────────────
             if 'lat' in elem and 'lon' in elem:
                 lat, lon = elem['lat'], elem['lon']
             elif 'center' in elem:
@@ -296,14 +374,24 @@ class OSMService:
                 lon = elem['center']['lon']
             else:
                 continue
-            
+
+            # ── Filter 3: Coordinate boundary check ────────────────────────
+            # Large OSM ways (rivers, forests) can have wildly wrong centre
+            # points. Reject anything outside 60 km of the searched city.
+            if city_lat is not None and city_lon is not None:
+                if not self._within_city_radius(lat, lon, city_lat, city_lon):
+                    skipped_coord += 1
+                    logger.debug(
+                        f"Rejected out-of-range POI '{name}' "
+                        f"at ({lat:.4f},{lon:.4f}) — >60km from {city}"
+                    )
+                    continue
+
             # Determine category and type
             category = self._determine_category(tags, interests)
             osm_type = self._get_osm_type(tags)
-            
-            # Estimate cost
             cost = self._estimate_cost(tags, osm_type)
-            
+
             poi = {
                 'name': name,
                 'type': category,
@@ -315,13 +403,23 @@ class OSMService:
                 'interests': [category],
                 'city': city,
                 'osm_id': f"{elem['type']}{elem['id']}",
+                'osm_element_type': elem.get('type', 'node'),
                 'address': tags.get('addr:street', ''),
-                'description': tags.get('description', '')
+                'description': tags.get('description', ''),
+                'wikipedia': tags.get('wikipedia', ''),
+                'wikidata': tags.get('wikidata', ''),
+                'raw_tags': tags
             }
-            
             pois.append(poi)
-        
+
+        if skipped_coord or skipped_name:
+            logger.info(
+                f"POI quality filter: kept {len(pois)}, "
+                f"rejected {skipped_name} bad-name, "
+                f"{skipped_coord} out-of-range"
+            )
         return pois
+
     
     def _determine_category(self, tags: Dict, interests: List[str]) -> str:
         """Determine POI category from OSM tags"""

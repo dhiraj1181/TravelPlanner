@@ -1,8 +1,8 @@
 """
 Pydantic models for request/response validation
 """
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field, AliasChoices
+from typing import List, Optional
 
 
 class POI(BaseModel):
@@ -25,9 +25,15 @@ class DayItinerary(BaseModel):
 class ItineraryRequest(BaseModel):
     """Request payload from Spring Boot backend"""
     destination: str = Field(..., description="Destination city/country")
-    days: int = Field(..., gt=0, le=14, description="Number of days (1-14)")
+    days: int = Field(..., gt=0, le=20, description="Number of days (1-20)")
     budget: float = Field(..., gt=0, description="Budget in USD")
     interests: List[str] = Field(..., min_length=1, description="List of user interests")
+    # Accept both 'userId' (Java camelCase) and 'user_id' (Python snake_case)
+    user_id: Optional[int] = Field(
+        None,
+        validation_alias=AliasChoices('userId', 'user_id'),
+        description="User ID for personalized recommendations"
+    )
     
     class Config:
         json_schema_extra = {

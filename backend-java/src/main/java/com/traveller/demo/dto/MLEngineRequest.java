@@ -35,4 +35,9 @@ public class MLEngineRequest {
      * List of user's interests
      */
     private List<String> interests;
+
+    /**
+     * User ID for personalized recommendations (avoids repeating seen POIs)
+     */
+    private Long userId;
 }

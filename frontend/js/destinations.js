@@ -108,17 +108,19 @@ async function searchPlacesInCity(city) {
         console.log('Received POIs:', data);
 
         if (data.pois && data.pois.length > 0) {
-            // Normalize POI data
+            // Normalize POI data — preserve wikipedia/wikidata for image waterfall
             allDestinations = data.pois.map(poi => ({
                 name: poi.name,
                 type: poi.type,
                 cost: poi.cost || 0,
                 duration: poi.duration || 2,
-                distance: Math.random() * 30 + 5, // Mock distance
+                distance: Math.random() * 30 + 5,
                 interests: poi.interests || [poi.type],
-                icon: getIconForType(poi.type),
                 lat: poi.lat,
-                lon: poi.lon
+                lon: poi.lon,
+                city: poi.city || city,
+                wikipedia: poi.wikipedia || '',
+                wikidata: poi.wikidata || ''
             }));
 
             filterAndDisplayDestinations();
@@ -247,39 +249,47 @@ function displayDestinations(destinations) {
     container.innerHTML = '';
     container.appendChild(grid);
 
+    // Trigger async image loading for each card AFTER they are in the DOM
+    destinations.forEach((dest, idx) => {
+        const imgWrap = grid.querySelectorAll('.poi-img-wrap')[idx];
+        if (imgWrap) applyPoiImage(dest, imgWrap);
+    });
+
     console.log(`Displayed ${destinations.length} destinations`);
 }
 
 /**
- * Create destination card element
+ * Create destination card element — photo-first layout with shimmer skeleton.
+ * Images are injected asynchronously via applyPoiImage() after DOM insertion.
  */
 function createDestinationCard(destination) {
     const card = document.createElement('div');
     card.className = 'destination-card';
 
     card.innerHTML = `
-        <div class="destination-image">
-            ${destination.icon}
+        <div class="destination-image poi-img-wrap">
+            <!-- Shimmer skeleton shown while image loads -->
+            <div class="poi-shimmer"></div>
+            <img class="poi-photo" src="" alt="${destination.name}" style="display:none;width:100%;height:100%;object-fit:cover;">
         </div>
         <div class="destination-content">
             <h3 class="destination-title">${destination.name}</h3>
             <span class="destination-type">${getTypeLabel(destination.type)}</span>
             <div class="destination-meta">
                 <div class="destination-meta-item">
-                    ⏱️ ${destination.duration || 2} hours
+                    ⏱️ ${destination.duration || 2}h
                 </div>
-                ${destination.cost > 0 ? `
-                <div class="destination-meta-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <line x1="12" y1="1" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-                        <path d="M17 5H9.5C7.01472 5 5 7.01472 5 9.5C5 11.9853 7.01472 14 9.5 14H14.5C16.9853 14 19 16.0147 19 18.5C19 20.9853 16.9853 23 14.5 23H6" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    ₹${destination.cost}
-                </div>
-                ` : '<div class="destination-meta-item">🆓 Free</div>'}
+                ${destination.cost > 0
+                    ? `<div class="destination-meta-item">₹${destination.cost.toLocaleString()}</div>`
+                    : '<div class="destination-meta-item" style="color:#059669;font-weight:600;">🆓 Free</div>'}
             </div>
         </div>
     `;
+
+    // Overlay the heart button on the image area
+    const imgWrap = card.querySelector('.poi-img-wrap');
+    const heartBtn = createWishlistButton(destination);
+    imgWrap.appendChild(heartBtn);
 
     return card;
 }

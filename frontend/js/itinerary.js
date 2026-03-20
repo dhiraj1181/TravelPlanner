@@ -116,19 +116,19 @@ function renderItinerary(trip) {
     }
 
     // Render day-by-day itinerary
-    renderDayByDay(trip.itinerary.dayByDay);
+    renderDayByDay(trip.itinerary.dayByDay, trip.destination);
 }
 
 /**
  * Render day-by-day itinerary sections
  * @param {Array} days - Array of day objects with POIs
  */
-function renderDayByDay(days) {
+function renderDayByDay(days, destination) {
     const container = document.getElementById('itineraryDays');
     container.innerHTML = '';
 
     days.forEach((dayData, index) => {
-        const daySection = createDaySection(dayData, index + 1);
+        const daySection = createDaySection(dayData, index + 1, destination);
         container.appendChild(daySection);
     });
 }
@@ -139,7 +139,7 @@ function renderDayByDay(days) {
  * @param {number} dayNumber - Day number
  * @returns {HTMLElement} Day section element
  */
-function createDaySection(dayData, dayNumber) {
+function createDaySection(dayData, dayNumber, destination) {
     const section = document.createElement('div');
     section.className = 'day-section';
 
@@ -160,7 +160,7 @@ function createDaySection(dayData, dayNumber) {
     // POIs for this day
     const poisContainer = document.createElement('div');
     dayData.pois.forEach((poi, index) => {
-        const poiCard = createPOICard(poi, index + 1);
+        const poiCard = createPOICard(poi, index + 1, destination);
         poisContainer.appendChild(poiCard);
     });
     section.appendChild(poisContainer);
@@ -174,7 +174,7 @@ function createDaySection(dayData, dayNumber) {
  * @param {number} order - Order in the day
  * @returns {HTMLElement} POI card element
  */
-function createPOICard(poi, order) {
+function createPOICard(poi, order, destination) {
     const card = document.createElement('div');
     card.className = 'poi-card';
 
@@ -213,6 +213,16 @@ function createPOICard(poi, order) {
             </div>
         </div>
     `;
+
+    // Add wishlist heart button — inlined POI data for the wishlist module
+    const wishPoi = {
+        name: poi.name,
+        type: poi.type || 'culture',
+        city: destination || '',
+        cost: poi.cost || 0,
+        duration: poi.duration || 2
+    };
+    card.appendChild(createWishlistButton(wishPoi));
 
     return card;
 }

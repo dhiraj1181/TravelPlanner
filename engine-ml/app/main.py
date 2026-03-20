@@ -9,9 +9,11 @@ import logging
 
 from app.models import ItineraryRequest, ItineraryResponse, DayItinerary, POI
 from app.data.poi_data import get_pois_for_destination
-from app.algorithms.clustering import cluster_pois_by_day, balance_clusters
+from app.algorithms.clustering import cluster_pois_by_day, balance_clusters, diversify_by_category
 from app.algorithms.tsp import optimize_daily_route
 from app.algorithms.budget import predict_budget
+from app.algorithms.ranking import rank_and_filter_pois
+from app.database.user_history import get_seen_poi_ids, save_seen_pois
 
 # Configure logging
 logging.basicConfig(
@@ -92,11 +94,22 @@ async def generate_itinerary(request: ItineraryRequest):
         
         logger.info(f"Found {len(pois)} POIs for {request.destination}")
         
-        # Log POI names before clustering
+        # Log POI names before ranking
         poi_names = [poi.get('name', 'UNKNOWN') for poi in pois[:5]]
-        logger.info(f"First 5 POI names BEFORE clustering: {poi_names}")
+        logger.info(f"First 5 POI names BEFORE ranking: {poi_names}")
         
-        # Step 2: Cluster POIs into days
+        # Step 2: Load user's seen POI history (Tier 2 personalization)
+        seen_poi_ids = get_seen_poi_ids(request.user_id, request.destination)
+        logger.info(f"User ID: {request.user_id} | Seen POIs for {request.destination}: {len(seen_poi_ids)}")
+
+        # Step 3: Rank POIs — high-quality first, seen POIs penalized
+        keep_top_n = request.days * 5  # ~5 quality POIs per day
+        pois = rank_and_filter_pois(pois, keep_top_n=keep_top_n,
+                                    interests=request.interests,
+                                    seen_poi_ids=seen_poi_ids)
+        logger.info(f"After ranking: kept top {len(pois)} diverse POIs")
+        
+        # Step 3: Cluster POIs into days
         clustered_pois = cluster_pois_by_day(pois, request.days)
         logger.info(f"Clustered POIs into {request.days} days")
         
@@ -105,8 +118,13 @@ async def generate_itinerary(request: ItineraryRequest):
             names = [poi.get('name', 'UNKNOWN') for poi in day_pois[:3]]
             logger.info(f"Day {day} POI names AFTER clustering: {names}")
         
-        # Step 3: Balance clusters (5 POIs per day)
-        balanced_clusters = balance_clusters(clustered_pois, request.days)
+        # Step 4: Balance clusters — exactly keep_top_n // days POIs per day
+        target_per_day = keep_top_n // request.days  # e.g. 20 POIs / 4 days = 5 per day
+        balanced_clusters = balance_clusters(clustered_pois, target_per_day)
+        
+        # Step 5: Diversify by category — swap POIs between days so each day
+        #         has a mix (culture + nature + food) not all-temples or all-parks
+        balanced_clusters = diversify_by_category(balanced_clusters)
         
         # Step 4: Optimize route for each day using TSP
         itinerary = {}
@@ -115,6 +133,9 @@ async def generate_itinerary(request: ItineraryRequest):
         for day_num, day_pois in balanced_clusters.items():
             # Optimize order of POIs for this day
             optimized_pois = optimize_daily_route(day_pois)
+            
+            # Nightlife always happens at night — move bars/clubs to end of day
+            optimized_pois.sort(key=lambda p: 1 if p.get('type') == 'nightlife' else 0)
             
             # Convert to response format
             itinerary[f"day_{day_num}"] = [
@@ -156,6 +177,11 @@ async def generate_itinerary(request: ItineraryRequest):
             ]
         )
         
+        # Save selected POIs to user history so next search gets different places
+        if request.user_id:
+            selected_osm_ids = [p.get('osm_id') for p in pois if p.get('osm_id')]
+            save_seen_pois(request.user_id, request.destination, selected_osm_ids)
+
         logger.info(f"Successfully generated itinerary for {request.destination}")
         return response
         

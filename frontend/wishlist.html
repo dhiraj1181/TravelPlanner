@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your wishlist of saved destinations — TravelPro">
+    <title>My Wishlist - TravelPro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <style>
+        body { display: flex; }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: var(--space-8);
+            background: var(--color-gray-50);
+            min-height: 100vh;
+        }
+
+        /* ── Page header ── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-8);
+        }
+        .page-header h1 { margin-bottom: var(--space-1); }
+        .page-header p  { color: var(--color-gray-500); font-size: var(--font-size-sm); }
+
+        /* ── Stats strip ── */
+        .wishlist-stats {
+            display: flex;
+            gap: var(--space-6);
+            background: var(--color-white);
+            border-radius: var(--radius-xl);
+            padding: var(--space-5) var(--space-7);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--space-8);
+            border-left: 4px solid var(--color-primary);
+            flex-wrap: wrap;
+        }
+        .stat-item { display: flex; align-items: center; gap: var(--space-3); }
+        .stat-item .stat-val {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-gray-900);
+        }
+        .stat-item .stat-label { font-size: var(--font-size-xs); color: var(--color-gray-500); }
+
+        /* ── Card grid ── */
+        .wishlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-6);
+        }
+
+        .destination-card {
+            background: var(--color-white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+        .destination-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* Photo area */
+        .destination-image {
+            width: 100%;
+            height: 200px;
+            background: var(--color-gray-100);
+            overflow: hidden;
+            position: relative;
+        }
+
+        @keyframes shimmer {
+            0%   { background-position: -600px 0; }
+            100% { background-position:  600px 0; }
+        }
+        .poi-shimmer {
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 600px 100%;
+            animation: shimmer 1.4s infinite linear;
+        }
+
+        /* Remove button overlay */
+        .remove-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 10;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.92);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            transition: transform 0.18s ease, background 0.18s ease;
+            backdrop-filter: blur(4px);
+            color: #ef4444;
+        }
+        .remove-btn:hover { transform: scale(1.15); background: #fff0f0; }
+
+        /* Added-date badge */
+        .added-badge {
+            position: absolute;
+            bottom: 10px; left: 10px;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Content */
+        .destination-content { padding: var(--space-5); }
+        .destination-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-2);
+            color: var(--color-gray-900);
+        }
+        .destination-type {
+            display: inline-block;
+            padding: var(--space-1) var(--space-3);
+            background: var(--color-secondary-light);
+            color: var(--color-primary);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--space-3);
+        }
+        .destination-meta {
+            display: flex;
+            gap: var(--space-4);
+            color: var(--color-gray-600);
+            font-size: var(--font-size-sm);
+        }
+        .destination-meta-item { display: flex; align-items: center; gap: var(--space-1); }
+
+        /* city tag below type */
+        .city-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: var(--font-size-xs);
+            color: var(--color-gray-400);
+            margin-left: var(--space-2);
+        }
+
+        /* Empty state */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: var(--space-16);
+            color: var(--color-gray-500);
+        }
+        .empty-state-icon { font-size: 5rem; margin-bottom: var(--space-4); display: block; }
+        .empty-state h2 { font-size: var(--font-size-xl); margin-bottom: var(--space-2); color: var(--color-gray-700); }
+        .empty-state p  { margin-bottom: var(--space-6); }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: var(--space-6); right: var(--space-6);
+            background: var(--color-gray-900); color: #fff;
+            padding: var(--space-3) var(--space-5);
+            border-radius: var(--radius-lg);
+            font-size: var(--font-size-sm);
+            opacity: 0; transform: translateY(8px);
+            transition: all 0.3s; z-index: 9999;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .main-content { margin-left: 0; }
+            .wishlist-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .wishlist-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ========== Sidebar ========== -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="currentColor"/>
+            </svg>
+            <span style="font-family:var(--font-family-heading);font-weight:var(--font-weight-bold);font-size:var(--font-size-xl);">TravelPro</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M3 9L12 2L21 9V20C21 21.1 20.1 22 19 22H5C3.9 22 3 21.1 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Dashboard
+            </a>
+
+            <a href="destinations.html" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" fill="currentColor"/></svg>
+                Destinations
+            </a>
+
+            <a href="wishlist.html" class="sidebar-nav-item active">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Wishlist
+            </a>
+
+            <a href="trip-history.html" class="sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.05 11A9 9 0 1 0 4 7.5L1 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 3V7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Trip History
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-avatar" id="userAvatar">U</div>
+                <div class="sidebar-user-details">
+                    <div class="sidebar-user-name" id="userName">User</div>
+                    <div class="sidebar-user-email" id="userEmail">user@example.com</div>
+                </div>
+            </div>
+            <button class="sidebar-logout" id="logoutBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- ========== Main Content ========== -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <h1>My Wishlist</h1>
+                <p>Places you love and want to visit someday</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.location.href='destinations.html'">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Discover More
+            </button>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="wishlist-stats" id="statsStrip">
+            <div class="stat-item">
+                <span class="stat-val" id="statCount">—</span>
+                <span class="stat-label">Saved Places</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-val" id="statCities">—</span>
+                <span class="stat-label">Cities</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-val" id="statFree">—</span>
+                <span class="stat-label">Free Entries</span>
+            </div>
+        </div>
+
+        <!-- Card grid -->
+        <div class="wishlist-grid" id="wishlistGrid"></div>
+    </main>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/wishlist.js"></script>
+    <script src="js/poi-images.js"></script>
+
+    <script>
+        // ── Init ───────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN)) {
+                window.location.href = 'index.html'; return;
+            }
+
+            // Sidebar user info
+            const user = JSON.parse(localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.USER_DATA) || '{}');
+            if (user.name) {
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+            }
+            if (user.email) document.getElementById('userEmail').textContent = user.email;
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
+                localStorage.removeItem(APP_CONSTANTS.STORAGE_KEYS.USER_DATA);
+                window.location.href = 'index.html';
+            });
+
+            renderWishlist();
+        });
+
+        // ── Render ─────────────────────────────────────────────────────────
+        function renderWishlist() {
+            const items = getWishlist();
+            const grid  = document.getElementById('wishlistGrid');
+            grid.innerHTML = '';
+
+            // Stats
+            const uniqueCities = new Set(items.map(i => i.city || '').filter(Boolean)).size;
+            const freeCount    = items.filter(i => !i.cost || i.cost === 0).length;
+            document.getElementById('statCount').textContent  = items.length;
+            document.getElementById('statCities').textContent = uniqueCities;
+            document.getElementById('statFree').textContent   = freeCount;
+
+            if (items.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-state-icon">🤍</span>
+                        <h2>Your wishlist is empty</h2>
+                        <p>Go to Destinations, search a city, and tap the ❤️ on any place you love.</p>
+                        <button class="btn btn-primary" onclick="window.location.href='destinations.html'">
+                            Explore Destinations
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            // Build cards
+            items.forEach((item, idx) => {
+                const card = buildWishlistCard(item);
+                grid.appendChild(card);
+            });
+
+            // Load images after all cards are in DOM
+            const wraps = grid.querySelectorAll('.destination-image');
+            items.forEach((item, idx) => {
+                if (wraps[idx]) applyPoiImage(item, wraps[idx]);
+            });
+        }
+
+        function buildWishlistCard(item) {
+            const card = document.createElement('div');
+            card.className = 'destination-card';
+
+            const addedDate = item.addedAt
+                ? new Date(item.addedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+                : '';
+
+            card.innerHTML = `
+                <div class="destination-image">
+                    <div class="poi-shimmer"></div>
+                    <img class="poi-photo" src="" alt="${item.name}" style="display:none;width:100%;height:100%;object-fit:cover;">
+                    ${addedDate ? `<div class="added-badge">Saved ${addedDate}</div>` : ''}
+                </div>
+                <div class="destination-content">
+                    <h3 class="destination-title">${item.name}</h3>
+                    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:var(--space-3);">
+                        <span class="destination-type">${getTypeLabel(item.type)}</span>
+                        ${item.city ? `<span class="city-tag">📍 ${_capitalise(item.city)}</span>` : ''}
+                    </div>
+                    <div class="destination-meta">
+                        <div class="destination-meta-item">⏱️ ${item.duration || 2}h</div>
+                        ${item.cost > 0
+                            ? `<div class="destination-meta-item">₹${item.cost.toLocaleString()}</div>`
+                            : '<div class="destination-meta-item" style="color:#059669;font-weight:600;">🆓 Free</div>'}
+                    </div>
+                </div>`;
+
+            // Remove button overlay
+            const imgDiv = card.querySelector('.destination-image');
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.title = 'Remove from Wishlist';
+            removeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+            removeBtn.addEventListener('click', () => {
+                removeFromWishlist(item);
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => { card.remove(); renderWishlist(); }, 320);
+                showToast('💔 Removed from wishlist');
+            });
+            imgDiv.appendChild(removeBtn);
+
+            return card;
+        }
+
+        function getTypeLabel(type) {
+            const labels = {
+                museum:'Museum', food:'Food & Dining', culture:'Cultural',
+                nature:'Nature', shopping:'Shopping', adventure:'Adventure',
+                history:'Historical', nightlife:'Nightlife'
+            };
+            return labels[type] || type || 'Place';
+        }
+
+        function _capitalise(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show';
+            setTimeout(() => t.className = 'toast', 2800);
+        }
+    </script>
+</body>
+</html>

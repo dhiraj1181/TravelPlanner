@@ -37,3 +37,19 @@ CREATE TABLE IF NOT EXISTS poi_cache (
 -- Create index for faster cache lookups
 CREATE INDEX idx_city_category ON poi_cache(city, category);
 CREATE INDEX idx_city_cached_at ON poi_cache(city, cached_at);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- User POI History — tracks which POIs each user has already seen
+-- Used by ML engine to avoid recommending the same places again
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS user_poi_history (
+    id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id    BIGINT      NOT NULL,
+    city       VARCHAR(100) NOT NULL,
+    osm_id     VARCHAR(100) NOT NULL,
+    seen_at    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+
+    -- Prevent duplicates (same user, same city, same POI)
+    UNIQUE KEY unique_seen (user_id, city, osm_id),
+    INDEX idx_user_city (user_id, city)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

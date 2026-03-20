@@ -440,11 +440,13 @@ async function saveTripToBackend(tripData) {
 
     // Real API call to backend
     const token = getAuthToken();
+    const user = getCurrentUser();
     const response = await fetch(`${API_CONFIG.BACKEND_URL}${API_CONFIG.ENDPOINTS.CREATE_TRIP}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'X-User-Id': user ? String(user.id) : ''
         },
         body: JSON.stringify(tripData)
     });

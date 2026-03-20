@@ -37,7 +37,8 @@ const APP_CONSTANTS = {
         AUTH_TOKEN: 'authToken',
         USER_DATA: 'userData',
         USER_TRIPS: 'userTrips',
-        TEMP_TRIP_DATA: 'tempTripData'
+        TEMP_TRIP_DATA: 'tempTripData',
+        WISHLIST: 'userWishlist'
     },
 
     // Form Validation
