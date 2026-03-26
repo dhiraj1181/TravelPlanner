@@ -1,12 +1,29 @@
 /**
- * poi-images.js — 3-Tier POI Image Waterfall
+ * poi-images.js — 3-Tier POI Image Waterfall (v3)
  *
- * Tier 1: Wikipedia REST API  — exact photo for famous places (free, no key, CORS-safe)
- * Tier 2: Lorem Flickr        — category vibe photo  (free, no key, reliable replacement for defunct source.unsplash.com)
- * Tier 3: Inline SVG          — offline-safe gradient + icon, card never looks broken
+ * Tier 1: Wikipedia "pageimages" API  — exact article photo for the named place
+ * Tier 2: Wikipedia category API      — random curated image from India-specific
+ *                                       categories (Museums_in_India, Forts_in_India …)
+ *                                       Culturally accurate, free, no key, CORS-safe.
+ * Tier 3: Inline SVG placeholder      — works offline, card never looks broken
  */
 
-// ── Tier 3 SVG placeholders per POI type ─────────────────────────────────
+// ── Tier 2: Wikipedia categories per POI type ───────────────────────────────
+// These are well-populated Wikimedia Commons / Wikipedia article categories.
+// The API randomly picks one article image each time → type-accurate photos.
+const WIKI_CATEGORIES = {
+    museum:    ['Museums_in_India', 'Archaeological_museums_in_India'],
+    culture:   ['Temples_in_India', 'Hindu_temples_in_India', 'Mosques_in_India'],
+    nature:    ['National_parks_of_India', 'Waterfalls_in_India', 'Wildlife_sanctuaries_in_India'],
+    food:      ['Indian_cuisine', 'Street_food_in_India', 'Cuisine_of_India'],
+    adventure: ['Mountains_of_India', 'Hill_stations_in_India', 'Trekking_in_India'],
+    shopping:  ['Bazaars_in_India', 'Markets_in_India'],
+    history:   ['Forts_in_India', 'Palaces_in_India', 'Heritage_sites_in_India'],
+    nightlife: ['Night_markets_in_India', 'Festivals_in_India'],
+    default:   ['Tourist_attractions_in_India', 'India_tourism']
+};
+
+// ── Tier 3 SVG placeholders per POI type ────────────────────────────────────
 const POI_SVG_PLACEHOLDERS = {
     museum: {
         gradient: ['#667eea', '#764ba2'],
@@ -55,25 +72,14 @@ const POI_SVG_PLACEHOLDERS = {
     }
 };
 
-// Tier 2: loremflickr.com keywords per POI type
-// Format: https://loremflickr.com/{w}/{h}/{keyword1},{keyword2}
-const FLICKR_KEYWORDS = {
-    museum:    ['museum', 'heritage', 'architecture'],
-    culture:   ['temple', 'monument', 'india'],
-    nature:    ['nature', 'park', 'landscape'],
-    food:      ['food', 'restaurant', 'cuisine'],
-    adventure: ['mountain', 'trekking', 'viewpoint'],
-    shopping:  ['market', 'bazaar', 'shopping'],
-    history:   ['fort', 'ruins', 'historical'],
-    nightlife: ['city', 'lights', 'night'],
-    default:   ['travel', 'india', 'destination']
-};
-
-// In-memory URL cache
+// In-memory cache: cacheKey → { url, source }
 const _imageCache = new Map();
 
-// ── Helper: fetch with manual timeout (broad browser support) ─────────────
-function _fetchWithTimeout(url, options = {}, ms = 6000) {
+// Category image pool cache: categoryName → [imageUrl, ...]
+const _categoryPool = new Map();
+
+// ── Helper: fetch with manual timeout ────────────────────────────────────────
+function _fetchWithTimeout(url, options = {}, ms = 7000) {
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('timeout')), ms);
         fetch(url, options)
@@ -82,76 +88,73 @@ function _fetchWithTimeout(url, options = {}, ms = 6000) {
     });
 }
 
+// Simple string hash for deterministic but varied image selection
+function _hash(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+    return Math.abs(h);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Resolve best image for a POI.
- * Returns { url, source: 'wikimedia'|'flickr'|'svg' }
- * 'svg' means inject via innerHTML, not <img src>.
+ * Returns { url, source: 'wikimedia'|'category'|'svg' }
  */
 async function resolvePoiImage(poi) {
     const key = poi.name + '|' + (poi.type || '');
     if (_imageCache.has(key)) return _imageCache.get(key);
 
-    // Tier 1 — Wikipedia
-    const wikiResult = await _tier1Wikipedia(poi);
-    if (wikiResult) {
-        _imageCache.set(key, wikiResult);
-        return wikiResult;
-    }
+    // Tier 1 — Wikipedia page image for the named place
+    const t1 = await _tier1Wikipedia(poi);
+    if (t1) { _imageCache.set(key, t1); return t1; }
 
-    // Tier 2 — Lorem Flickr
-    const flickrResult = _tier2LoremFlickr(poi);
-    _imageCache.set(key, flickrResult);
-    return flickrResult;
-    // Tier 3 (SVG) is applied in applyPoiImage on img.onerror
+    // Tier 2 — Wikipedia category image (India-specific, type-accurate)
+    const t2 = await _tier2WikiCategory(poi);
+    if (t2) { _imageCache.set(key, t2); return t2; }
+
+    // Tier 3 — SVG placeholder (resolved synchronously in applyPoiImage)
+    const svg = { url: null, source: 'svg' };
+    _imageCache.set(key, svg);
+    return svg;
 }
 
 /**
- * Apply an image to a .poi-img-wrap element that is already in the DOM.
- * Removes the shimmer and either shows the photo or injects an SVG placeholder.
+ * Apply resolved image to a .poi-img-wrap element in the DOM.
  */
 async function applyPoiImage(poi, imgWrapEl) {
     if (!imgWrapEl) return;
-
     const result = await resolvePoiImage(poi);
     const shimmer = imgWrapEl.querySelector('.poi-shimmer');
-    const imgEl = imgWrapEl.querySelector('.poi-photo');
+    const imgEl   = imgWrapEl.querySelector('.poi-photo');
 
-    if (result.source === 'svg') {
+    if (result.source === 'svg' || !result.url) {
         _showSvgFallback(imgWrapEl, poi.type, shimmer);
         return;
     }
 
-    const tempImg = new Image();
-
-    tempImg.onload = () => {
+    const temp = new Image();
+    temp.onload = () => {
         if (shimmer && shimmer.parentNode) shimmer.remove();
         if (imgEl) {
             imgEl.src = result.url;
             imgEl.style.display = 'block';
             imgEl.style.opacity = '0';
-            // Fade in
             requestAnimationFrame(() => {
                 imgEl.style.transition = 'opacity 0.45s ease';
                 imgEl.style.opacity = '1';
             });
         }
     };
-
-    tempImg.onerror = () => {
-        // Tier 2 failed → Tier 3 SVG
-        _showSvgFallback(imgWrapEl, poi.type, shimmer);
-    };
-
-    tempImg.src = result.url;
+    temp.onerror = () => _showSvgFallback(imgWrapEl, poi.type, shimmer);
+    temp.src = result.url;
 }
 
-// ── Tier 1: Wikipedia page image ─────────────────────────────────────────
+// ── Tier 1: Wikipedia article photo for the exact place name ─────────────────
 async function _tier1Wikipedia(poi) {
-    // Path A: OSM wikipedia tag (e.g. "en:Amber Fort")
+    // Try the OSM wikipedia tag first (most accurate)
     if (poi.wikipedia) {
         const title = poi.wikipedia.includes(':')
             ? poi.wikipedia.split(':').slice(1).join(':')
@@ -160,10 +163,15 @@ async function _tier1Wikipedia(poi) {
         if (url) return { url, source: 'wikimedia' };
     }
 
-    // Path B: Try POI name directly — works well for famous landmarks
+    // Try the POI name directly — works great for famous landmarks
     const url = await _fetchWikipediaThumb(poi.name);
     if (url) return { url, source: 'wikimedia' };
 
+    // Try "POI name City" for better disambiguation
+    if (poi.city) {
+        const url2 = await _fetchWikipediaThumb(`${poi.name} ${poi.city}`);
+        if (url2) return { url: url2, source: 'wikimedia' };
+    }
     return null;
 }
 
@@ -174,34 +182,70 @@ async function _fetchWikipediaThumb(title) {
             `https://en.wikipedia.org/w/api.php` +
             `?action=query&titles=${t}&prop=pageimages&format=json` +
             `&pithumbsize=640&pilimit=1&origin=*`;
-
         const res = await _fetchWithTimeout(apiUrl, {}, 6000);
         if (!res.ok) return null;
-
         const data = await res.json();
-        const pages = Object.values(data?.query?.pages || {});
-        for (const page of pages) {
-            // "-1" page id means the article doesn't exist
+        for (const page of Object.values(data?.query?.pages || {})) {
             if (page.pageid !== -1 && page.thumbnail?.source) {
                 return page.thumbnail.source;
             }
         }
-    } catch (_) { /* timeout or network — fall through */ }
+    } catch (_) {}
     return null;
 }
 
-// ── Tier 2: Lorem Flickr (free, no key, category keywords) ───────────────
-function _tier2LoremFlickr(poi) {
-    const keywords = FLICKR_KEYWORDS[poi.type] || FLICKR_KEYWORDS.default;
-    // loremflickr picks a real Flickr photo tagged with these words
-    // Lock=hash so the same POI always gets the same photo
-    const lock = _simpleHash(poi.name);
-    const kw = keywords.join(',');
-    const url = `https://loremflickr.com/600/400/${encodeURIComponent(kw)}/all?lock=${lock}`;
-    return { url, source: 'flickr' };
+// ── Tier 2: Wikipedia category API — India-specific, type-accurate ────────────
+async function _tier2WikiCategory(poi) {
+    const type = poi.type || 'default';
+    const cats = WIKI_CATEGORIES[type] || WIKI_CATEGORIES.default;
+
+    // Use a deterministic-but-varied index so the same POI always gets
+    // the same category but different POIs rotate through.
+    const catIndex = _hash(poi.name) % cats.length;
+    const category = cats[catIndex];
+
+    // Fetch a pool of article thumbnails from this Wikipedia category
+    const pool = await _getCategoryImagePool(category);
+    if (!pool || pool.length === 0) return null;
+
+    // Pick deterministically based on POI name to keep images stable
+    const img = pool[_hash(poi.name + category) % pool.length];
+    return img ? { url: img, source: 'category' } : null;
 }
 
-// ── Tier 3 helper ─────────────────────────────────────────────────────────
+/**
+ * Fetch up to 30 article thumbnail URLs from a Wikipedia category.
+ * Results are cached per category for the session so subsequent lookups are instant.
+ */
+async function _getCategoryImagePool(category) {
+    if (_categoryPool.has(category)) return _categoryPool.get(category);
+
+    try {
+        // Use Wikipedia's generator API: get pages in the category + their images in one call
+        const url =
+            `https://en.wikipedia.org/w/api.php` +
+            `?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(category)}` +
+            `&gcmtype=page&gcmlimit=30&prop=pageimages&pithumbsize=640&pilimit=30` +
+            `&format=json&origin=*`;
+
+        const res = await _fetchWithTimeout(url, {}, 8000);
+        if (!res.ok) { _categoryPool.set(category, []); return []; }
+
+        const data = await res.json();
+        const pages = Object.values(data?.query?.pages || {});
+        const urls = pages
+            .map(p => p.thumbnail?.source)
+            .filter(Boolean);
+
+        _categoryPool.set(category, urls);
+        return urls;
+    } catch (_) {
+        _categoryPool.set(category, []);
+        return [];
+    }
+}
+
+// ── Tier 3: SVG placeholder ───────────────────────────────────────────────────
 function _showSvgFallback(wrapEl, type, shimmer) {
     if (shimmer && shimmer.parentNode) shimmer.remove();
     const ph = POI_SVG_PLACEHOLDERS[type] || POI_SVG_PLACEHOLDERS.default;
@@ -212,13 +256,4 @@ function _showSvgFallback(wrapEl, type, shimmer) {
             display:flex;align-items:center;justify-content:center;">
             ${ph.svg}
         </div>`;
-}
-
-// Simple deterministic hash for loremflickr lock parameter
-function _simpleHash(str) {
-    let h = 0;
-    for (let i = 0; i < str.length; i++) {
-        h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-    }
-    return Math.abs(h);
 }

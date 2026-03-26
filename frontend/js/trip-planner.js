@@ -36,6 +36,14 @@ function initializeTripPlanner() {
 
     // Load any saved form data
     loadSavedFormData();
+
+    // Auto-fill destination if user came from the homepage action box
+    const prefilledDest = sessionStorage.getItem('prefilledDestination');
+    if (prefilledDest) {
+        const destInput = document.getElementById('destination');
+        if (destInput) destInput.value = prefilledDest;
+        sessionStorage.removeItem('prefilledDestination'); // clear after use
+    }
 }
 
 /**

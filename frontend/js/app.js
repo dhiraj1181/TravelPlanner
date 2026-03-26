@@ -12,47 +12,34 @@ document.addEventListener('DOMContentLoaded', function () {
  * Initialize landing page functionality
  */
 function initializeLandingPage() {
-    // Get modal and trigger elements
     const authModal = document.getElementById('authModal');
-    const getStartedBtn = document.getElementById('getStartedBtn');
+    // Support both old (getStartedBtn) and new (planTripBtn) homepage button IDs
+    const triggerBtn = document.getElementById('planTripBtn') || document.getElementById('getStartedBtn');
     const startPlanningBtn = document.getElementById('startPlanningBtn');
-    const closeAuthModal = document.getElementById('closeAuthModal');
+    const closeModalBtn = document.getElementById('closeAuthModal');
 
-    // Check if elements exist (landing page)
-    if (authModal && getStartedBtn) {
-        // Open modal when "Get Started" button is clicked
-        getStartedBtn.addEventListener('click', function () {
+    if (!authModal) return; // Not on a page with auth modal
+
+    // Open modal on CTA click
+    if (triggerBtn) {
+        triggerBtn.addEventListener('click', function () {
             openAuthModal();
         });
-
-        // Open modal when "Start Planning" button is clicked
-        if (startPlanningBtn) {
-            startPlanningBtn.addEventListener('click', function () {
-                openAuthModal();
-            });
-        }
-
-        // Close modal when X button is clicked
-        closeAuthModal.addEventListener('click', function () {
-            closeAuthModalFn();
-        });
-
-        // Close modal when clicking outside
-        authModal.addEventListener('click', function (e) {
-            if (e.target === authModal) {
-                closeAuthModalFn();
-            }
-        });
-
-        // Setup auth tabs
-        setupAuthTabs();
-
-        // Setup auth forms
-        setupAuthForms();
-
-        // Load hero image
-        loadHeroImage();
     }
+    if (startPlanningBtn) {
+        startPlanningBtn.addEventListener('click', openAuthModal);
+    }
+
+    // Close modal
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeAuthModalFn);
+    }
+    authModal.addEventListener('click', function (e) {
+        if (e.target === authModal) closeAuthModalFn();
+    });
+
+    setupAuthTabs();
+    setupAuthForms();
 }
 
 /**
@@ -112,32 +99,29 @@ function setupAuthForms() {
         loginForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            const errorEl = document.getElementById('loginError');
+            if (errorEl) errorEl.textContent = '';
+
             const formData = new FormData(loginForm);
             const credentials = {
                 email: formData.get('email'),
                 password: formData.get('password')
             };
 
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+
             try {
-                // Show loading state
-                const submitBtn = loginForm.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = 'Logging in...';
-                submitBtn.disabled = true;
-
-                // Call login function from auth.js
-                const result = await login(credentials);
-
-                // Success - redirect to dashboard
-                window.location.href = 'dashboard.html';
-
+                await login(credentials);
+                // Redirect: if user typed a destination on homepage, go to create-trip
+                const dest = sessionStorage.getItem('prefilledDestination');
+                window.location.href = dest ? 'create-trip.html' : 'dashboard.html';
             } catch (error) {
-                // Show error message
-                alert('Login failed. Please check your credentials and try again.');
-
-                // Restore button state
-                const submitBtn = loginForm.querySelector('button[type="submit"]');
-                submitBtn.textContent = 'Login';
+                if (errorEl) errorEl.textContent = 'Invalid email or password. Please try again.';
+                else alert('Login failed. Please check your credentials.');
+                submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }
         });
@@ -148,13 +132,16 @@ function setupAuthForms() {
         registerForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            const errorEl = document.getElementById('registerError');
+            if (errorEl) errorEl.textContent = '';
+
             const formData = new FormData(registerForm);
             const password = formData.get('password');
             const confirmPassword = formData.get('confirmPassword');
 
-            // Validate password match
             if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+                if (errorEl) errorEl.textContent = 'Passwords do not match!';
+                else alert('Passwords do not match!');
                 return;
             }
 
@@ -164,26 +151,20 @@ function setupAuthForms() {
                 password: password
             };
 
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Creating account...';
+            submitBtn.disabled = true;
+
             try {
-                // Show loading state
-                const submitBtn = registerForm.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = 'Registering...';
-                submitBtn.disabled = true;
-
-                // Call register function from auth.js
-                const result = await register(userData);
-
-                // Success - redirect to dashboard
-                window.location.href = 'dashboard.html';
-
+                await register(userData);
+                // Redirect: if user typed a destination on homepage, go to create-trip
+                const dest = sessionStorage.getItem('prefilledDestination');
+                window.location.href = dest ? 'create-trip.html' : 'dashboard.html';
             } catch (error) {
-                // Show error message
-                alert('Registration failed. Please try again.');
-
-                // Restore button state
-                const submitBtn = registerForm.querySelector('button[type="submit"]');
-                submitBtn.textContent = 'Register';
+                if (errorEl) errorEl.textContent = 'Registration failed. Please try again.';
+                else alert('Registration failed. Please try again.');
+                submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }
         });

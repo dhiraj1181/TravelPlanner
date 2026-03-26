@@ -7,7 +7,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * CorsConfig - Cross-Origin Resource Sharing configuration
@@ -32,8 +34,11 @@ public class CorsConfig {
         // Allow credentials (cookies, authorization headers)
         config.setAllowCredentials(true);
 
-        // Set allowed origins from properties
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins));
+        // Set allowed origin patterns (supports wildcards, works with allowCredentials)
+        // Also includes "null" to allow requests from file:// pages (browser sends Origin: null)
+        List<String> patterns = new ArrayList<>(Arrays.asList(allowedOrigins));
+        patterns.add("null"); // file:// origin
+        config.setAllowedOriginPatterns(patterns);
 
         // Allow all HTTP methods
         config.addAllowedMethod("*");

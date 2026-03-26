@@ -5,137 +5,1343 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="TravelPro - Smart itinerary planning powered by intelligent algorithms. Discover destinations, manage budgets, and create unforgettable travel experiences.">
-    <title>TravelPro - Plan Your Dream Journey</title>
+        content="TravelPro — AI-powered itinerary planning. Tell us your vibe, we'll build your perfect trip.">
+    <title>TravelPro — Plan Your Dream Journey</title>
 
-    <!-- Google Fonts -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/images/icon.png">
+
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/components.css">
+    <style>
+        /* ─────────────────────────────────────────
+       CSS VARIABLES & RESET
+    ───────────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --green: #24553b;
+            --green-dark: #1a3f2c;
+            --green-light: #e9f2ec;
+            --green-mid: #3a7d54;
+            --bg: #fafafa;
+            --text: #1a1a1a;
+            --text-muted: #6b7280;
+            --white: #ffffff;
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 24px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, .08);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, .12);
+            --shadow-lg: 0 24px 64px rgba(0, 0, 0, .16);
+            --transition: 0.28s cubic-bezier(.4, 0, .2, 1);
+            font-family: 'Inter', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* ─────────────────────────────────────────
+       PHASE 1: NAVBAR
+    ───────────────────────────────────────── */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            height: 68px;
+            background: rgba(255, 255, 255, .85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(36, 85, 59, .08);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--green);
+            letter-spacing: -.3px;
+        }
+
+        .nav-logo span {
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: color var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--green);
+        }
+
+        .nav-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: var(--green);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: .9rem;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(36, 85, 59, .35);
+            transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+        }
+
+        .nav-cta:hover {
+            background: var(--green-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(36, 85, 59, .4);
+        }
+
+        /* ─────────────────────────────────────────
+       PHASE 2: HERO
+    ───────────────────────────────────────── */
+        .hero {
+            position: relative;
+            height: 80vh;
+            min-height: 560px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* overflow:hidden removed — was clipping the action box */
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(to bottom, rgba(0, 0, 0, .18) 0%, rgba(0, 0, 0, .55) 100%),
+                url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&auto=format&fit=crop') center/cover no-repeat;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 0 5%;
+            max-width: 780px;
+        }
+
+        .hero-eyebrow {
+            display: inline-block;
+            background: rgba(255, 255, 255, .18);
+            border: 1px solid rgba(255, 255, 255, .35);
+            color: #fff;
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 100px;
+            margin-bottom: 22px;
+            backdrop-filter: blur(8px);
+        }
+
+        .hero-title {
+            font-size: clamp(2.4rem, 6vw, 4.2rem);
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.1;
+            letter-spacing: -.5px;
+            margin-bottom: 18px;
+        }
+
+        .hero-title em {
+            font-style: normal;
+            background: linear-gradient(90deg, #6ee7b7, #a7f3d0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub {
+            font-size: 1.1rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, .85);
+            max-width: 520px;
+            margin: 0 auto 44px;
+        }
+
+        /* Action Box — overlaps bottom of hero */
+        .action-box-wrap {
+            position: absolute;
+            bottom: -48px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 680px;
+            z-index: 10;
+        }
+
+        .action-box {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .action-box input {
+            flex: 1;
+            border: 2px solid #e5e7eb;
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text);
+            outline: none;
+            transition: border-color var(--transition);
+        }
+
+        .action-box input:focus {
+            border-color: var(--green);
+        }
+
+        .action-box input::placeholder {
+            color: #9ca3af;
+        }
+
+        .action-box button {
+            white-space: nowrap;
+            padding: 14px 26px;
+            background: var(--green);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: .95rem;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(36, 85, 59, .35);
+            transition: background var(--transition), transform var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-box button:hover {
+            background: var(--green-dark);
+            transform: translateY(-2px);
+        }
+
+        /* ─────────────────────────────────────────
+       SECTION COMMON
+    ───────────────────────────────────────── */
+        .section {
+            padding: 100px 5%;
+        }
+
+        .section-label {
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--green);
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -.3px;
+            line-height: 1.15;
+            margin-bottom: 12px;
+        }
+
+        .section-sub {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 540px;
+        }
+
+        .section-head {
+            margin-bottom: 54px;
+        }
+
+        /* ─────────────────────────────────────────
+       PHASE 3a: HOW IT WORKS — 3-col grid
+    ───────────────────────────────────────── */
+        .hiw {
+            background: var(--green-light);
+        }
+
+        .hiw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 28px;
+        }
+
+        .hiw-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 40px 32px;
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition), box-shadow var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hiw-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--green);
+            border-radius: 4px 0 0 4px;
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+
+        .hiw-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .hiw-card:hover::before {
+            opacity: 1;
+        }
+
+        .hiw-num {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--green-light);
+            line-height: 1;
+            margin-bottom: 16px;
+            -webkit-text-stroke: 2px var(--green);
+        }
+
+        .hiw-icon {
+            font-size: 2.2rem;
+            margin-bottom: 18px;
+            display: block;
+        }
+
+        .hiw-card h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 10px;
+            letter-spacing: -.2px;
+        }
+
+        .hiw-card p {
+            font-size: .95rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+
+        /* ─────────────────────────────────────────
+       PHASE 3b: ABOUT OUR AI — 50/50 split
+    ───────────────────────────────────────── */
+        .about {
+            background: var(--bg);
+        }
+
+        .about-inner {
+            display: flex;
+            align-items: center;
+            gap: 72px;
+            flex-wrap: wrap;
+        }
+
+        .about-text {
+            flex: 1 1 320px;
+        }
+
+        .about-text p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.75;
+            margin-bottom: 18px;
+        }
+
+        .about-text p strong {
+            color: var(--text);
+        }
+
+        .about-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--green-light);
+            color: var(--green);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: .82rem;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .about-image {
+            flex: 1 1 320px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .about-image img {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+        }
+
+        /* ─────────────────────────────────────────
+       PHASE 4: SCROLL-SNAP SLIDERS
+    ───────────────────────────────────────── */
+        .slider-section {
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .slider-section.alt {
+            background: #f0f6f2;
+        }
+
+        /* header row with arrows */
+        .slider-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .slider-arrows {
+            display: flex;
+            gap: 12px;
+        }
+
+        .arrow-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--green);
+            background: var(--white);
+            color: var(--green);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            transition: background var(--transition), color var(--transition), transform var(--transition);
+        }
+
+        .arrow-btn:hover {
+            background: var(--green);
+            color: var(--white);
+            transform: scale(1.08);
+        }
+
+        /* scroll-snap track */
+        .slider-track {
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            padding-bottom: 12px;
+            /* space for shadow */
+        }
+
+        .slider-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .slider-track {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* ── Destination cards ── */
+        .dest-card {
+            flex: 0 0 300px;
+            scroll-snap-align: start;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .dest-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .dest-card img {
+            width: 100%;
+            height: 210px;
+            object-fit: cover;
+            display: block;
+            transition: transform .5s ease;
+        }
+
+        .dest-card:hover img {
+            transform: scale(1.06);
+        }
+
+        .dest-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, .82) 0%, transparent 100%);
+            padding: 28px 18px 18px;
+            color: #fff;
+        }
+
+        .dest-info h4 {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .dest-info span {
+            font-size: .82rem;
+            opacity: .85;
+        }
+
+        .dest-tag {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: var(--green);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+        }
+
+        /* ── Testimonial cards ── */
+        .testi-card {
+            flex: 0 0 320px;
+            scroll-snap-align: start;
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 32px 28px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(36, 85, 59, .08);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .testi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .testi-stars {
+            color: #f59e0b;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+        }
+
+        .testi-text {
+            font-size: .97rem;
+            color: var(--text);
+            line-height: 1.7;
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+
+        .testi-author {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .testi-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--green-light);
+        }
+
+        .testi-name {
+            font-weight: 700;
+            font-size: .9rem;
+        }
+
+        .testi-loc {
+            font-size: .8rem;
+            color: var(--text-muted);
+        }
+
+        /* ─────────────────────────────────────────
+       STATS STRIP
+    ───────────────────────────────────────── */
+        .stats {
+            background: var(--green);
+            padding: 60px 5%;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0;
+        }
+
+        .stat-item {
+            flex: 1 1 160px;
+            text-align: center;
+            padding: 18px 28px;
+            border-right: 1px solid rgba(255, 255, 255, .18);
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-num {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            font-size: .85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, .7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ─────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────── */
+        .footer {
+            background: #0f1f17;
+            color: rgba(255, 255, 255, .6);
+            padding: 40px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-logo {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .footer p {
+            font-size: .85rem;
+        }
+    
+        /* ───────────────────────────────────────-─
+       AUTH MODAL (preserved)
+    ───────────────────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 40px 36px;
+            width: 92%;
+            max-width: 420px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            border: none;
+            background: none;
+            font-size: 1.5rem;
+            color: #9ca3af;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 24px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            font-weight: 600;
+            font-size: .9rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all var(--transition);
+        }
+
+        .auth-tab.active {
+            color: var(--green);
+            border-bottom-color: var(--green);
+        }
+
+        .auth-tab-content {
+            display: none;
+        }
+
+        .auth-tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            border: 2px solid #e5e7eb;
+            border-radius: var(--radius-sm);
+            padding: 11px 14px;
+            font-size: .95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+
+        .form-group input:focus {
+            border-color: var(--green);
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 13px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-weight: 700;
+            box-shadow: 0 4px 14px rgba(36, 85, 59, .35);
+            transition: background var(--transition), transform var(--transition);
+        }
+
+        .btn-full:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+        }
+
+        .error-msg {
+            color: #dc2626;
+            font-size: .82rem;
+            margin-top: 6px;
+            min-height: 18px;
+        }
+
+        /* ─────────────────────────────────────────
+       RESPONSIVE
+    ───────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .action-box {
+                flex-direction: column;
+            }
+
+            .action-box button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .about-inner {
+                gap: 36px;
+            }
+
+            .about-image img {
+                height: 240px;
+            }
+
+            .stat-item {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, .18);
+            }
+
+            .dest-card {
+                flex: 0 0 260px;
+            }
+
+            .testi-card {
+                flex: 0 0 280px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <!-- ========== Navigation Bar ========== -->
-    <nav class="navbar">
-        <div class="navbar-brand">
-            <!-- Plane icon SVG -->
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                    d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
-                    fill="currentColor" />
-            </svg>
-            TravelPro
+
+    <!-- ═══════════════════════════════════════════
+     PHASE 1: NAV
+═══════════════════════════════════════════ -->
+    <nav class="nav">
+        <div class="nav-logo">
+            <img src="assets/images/logo.png" alt="TravelPro icon" style="height:32px;width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-right:4px;"> TravelPro
         </div>
-        <button class="btn btn-primary" id="getStartedBtn">Get Started</button>
+        <ul class="nav-links">
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#destinations">Destinations</a></li>
+            <li><a href="#about">Our AI</a></li>
+            <li><a href="#testimonials">Reviews</a></li>
+        </ul>
+        <button class="nav-cta" id="planTripBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            Plan a Trip
+        </button>
     </nav>
 
-    <!-- ========== Hero Section ========== -->
+    <!-- ═══════════════════════════════════════════
+     PHASE 2: HERO
+═══════════════════════════════════════════ -->
     <section class="hero">
+        <div class="hero-bg"></div>
         <div class="hero-content">
-            <!-- Left: Text Content -->
-            <div class="hero-text animate-slideInUp">
-                <h1 class="hero-title">
-                    Plan Your Dream
-                    <span class="hero-title-accent">Journey</span>
-                </h1>
-                <p class="hero-description">
-                    Smart itinerary planning powered by intelligent algorithms. Discover destinations, manage budgets,
-                    and create unforgettable travel experiences.
-                </p>
-                <button class="btn btn-primary btn-lg" id="startPlanningBtn">
-                    Start Planning
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M13.5 4.5L21 12M21 12L13.5 19.5M21 12H3" stroke="currentColor" stroke-width="2"
+            <div class="hero-eyebrow">🤖 AI-Powered Travel Planning</div>
+            <h1 class="hero-title">Plan Your <em>Dream Journey</em></h1>
+            <p class="hero-sub">Smart itineraries generated by real algorithms — clustering, TSP routing, budget
+                prediction. Just tell us where to go.</p>
+        </div>
+        <!-- Action Box overlapping hero bottom -->
+        <div class="action-box-wrap">
+            <div class="action-box">
+                <input type="text" id="destInput"
+                    placeholder="🗺️ Where do you want to go? (e.g. Jaipur, Goa, Manali…)">
+                <button id="generateBtn">
+                    Generate Itinerary
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M13.5 4.5L21 12M21 12L13.5 19.5M21 12H3" stroke="currentColor" stroke-width="2.5"
                             stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
             </div>
+        </div>
+    </section>
 
-            <!-- Right: Hero Image -->
-            <div class="hero-image animate-slideInDown">
-                <img src="assets/images/img.jpg" alt="Mountain landscape with traveler" id="heroImage">
+    <!-- spacer for action-box overlap -->
+    <div style="height: 110px; background: #fafafa;"></div>
+
+    <!-- ═══════════════════════════════════════════
+     STATS STRIP
+═══════════════════════════════════════════ -->
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-num">50K+</div>
+            <div class="stat-label">Trips Planned</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">200+</div>
+            <div class="stat-label">Indian Cities</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">98%</div>
+            <div class="stat-label">Budget Accuracy</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">4.9★</div>
+            <div class="stat-label">Avg. Rating</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+     PHASE 3a: HOW IT WORKS
+═══════════════════════════════════════════ -->
+    <section class="section hiw" id="how-it-works">
+        <div class="section-head">
+            <p class="section-label">The Process</p>
+            <h2 class="section-title">Three Steps to Your Best Trip</h2>
+            <p class="section-sub">No spreadsheets. No guesswork. Our AI handles the heavy lifting.</p>
+        </div>
+        <div class="hiw-grid">
+
+            <div class="hiw-card">
+                <span class="hiw-icon">🎯</span>
+                <div class="hiw-num">01</div>
+                <h3>Tell Us Your Vibe</h3>
+                <p>Pick your city, budget, number of days, and interests — adventure, culture, food, nightlife, or all
+                    of the above.</p>
+            </div>
+
+            <div class="hiw-card">
+                <span class="hiw-icon">🧠</span>
+                <div class="hiw-num">02</div>
+                <h3>AI Does the Math</h3>
+                <p>Our ML engine fetches real POIs from OpenStreetMap, ranks them by quality and your history, then
+                    clusters by geography.</p>
+            </div>
+
+            <div class="hiw-card">
+                <span class="hiw-icon">🗺️</span>
+                <div class="hiw-num">03</div>
+                <h3>Get Your Route</h3>
+                <p>A TSP-optimised, day-by-day itinerary lands in your dashboard — with estimated costs and a
+                    green-light budget check.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+     PHASE 4: DESTINATIONS SLIDER
+═══════════════════════════════════════════ -->
+    <section class="section slider-section" id="destinations">
+        <div class="slider-header">
+            <div>
+                <p class="section-label">Explore India</p>
+                <h2 class="section-title">Top Destinations</h2>
+            </div>
+            <div class="slider-arrows">
+                <button class="arrow-btn" onclick="slide('destTrack',-1)" aria-label="Previous">&#10094;</button>
+                <button class="arrow-btn" onclick="slide('destTrack', 1)" aria-label="Next">&#10095;</button>
+            </div>
+        </div>
+        <div class="slider-track" id="destTrack">
+
+            <div class="dest-card">
+                <div class="dest-tag">🔥 Trending</div>
+                <img src="https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&auto=format&fit=crop"
+                    alt="Jaipur">
+                <div class="dest-info">
+                    <h4>Jaipur</h4><span>Rajasthan · History & Palaces</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🌊 Beach</div>
+                <img src="https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&auto=format&fit=crop"
+                    alt="Goa">
+                <div class="dest-info">
+                    <h4>Goa</h4><span>Goa · Sun, Sand & Seafood</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🏔️ Adventure</div>
+                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop"
+                    alt="Manali">
+                <div class="dest-info">
+                    <h4>Manali</h4><span>Himachal · Snow & Treks</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🕌 Culture</div>
+                <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&auto=format&fit=crop"
+                    alt="Agra">
+                <div class="dest-info">
+                    <h4>Agra</h4><span>UP · Taj Mahal & Mughal Art</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🌴 Nature</div>
+                <img src="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop"
+                    alt="Kerala">
+                <div class="dest-info">
+                    <h4>Kerala</h4><span>Kerala · Backwaters & Spice</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🏛️ Heritage</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Ahilya_Ghat_by_the_Ganges%2C_Varanasi.jpg"
+                    alt="Varanasi">
+                <div class="dest-info">
+                    <h4>Varanasi</h4><span>UP · Ghats &amp; Spirituality</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">👑 Royalty</div>
+                <img src="https://media.tacdn.com/media/attractions-splice-spp-674x446/06/74/2e/f7.jpg"
+                    alt="Mysore">
+                <div class="dest-info">
+                    <h4>Mysore</h4><span>Karnataka · Palace &amp; Silk</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">☕ Scenic</div>
+                <img src="https://northbengaltourism.com/images/holiday/nbthp0071_1.webp"
+                    alt="Darjeeling">
+                <div class="dest-info">
+                    <h4>Darjeeling</h4><span>West Bengal · Tea &amp; Mountains</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🧘 Adventure</div>
+                <img src="https://s7ap1.scene7.com/is/image/incredibleindia/1-triveni-ghat-rishikesh-uttarakhand-2-city-hero?qlt=82&ts=1726646286991"
+                    alt="Rishikesh">
+                <div class="dest-info">
+                    <h4>Rishikesh</h4><span>Uttarakhand · Yoga &amp; Rafting</span>
+                </div>
+            </div>
+
+            <div class="dest-card">
+                <div class="dest-tag">🎭 Culture</div>
+                <img src="https://images.unsplash.com/photo-1558431382-27e303142255?w=600&auto=format&fit=crop"
+                    alt="Kolkata">
+                <div class="dest-info">
+                    <h4>Kolkata</h4><span>West Bengal · Art &amp; Colonial</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+     PHASE 3b: ABOUT OUR AI
+═══════════════════════════════════════════ -->
+    <section class="section about" id="about">
+        <div class="about-inner">
+            <div class="about-text">
+                <p class="section-label">Under the Hood</p>
+                <h2 class="section-title">Real Algorithms,<br>Not Just Templates</h2>
+                <p>Most trip planners just show you a list. TravelPro <strong>solves the Travelling Salesman Problem
+                        (TSP)</strong> — the same mathematical problem used by logistics firms to optimise delivery
+                    routes — applied to your day's sightseeing.</p>
+                <p>Our ML pipeline fetches real Points of Interest from <strong>OpenStreetMap</strong>, ranks them by
+                    quality scores and your personal history, clusters them geographically by day, then runs a
+                    <strong>2-opt TSP optimisation</strong> to minimise travel time within each day.
+                </p>
+                <div style="margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span class="about-pill">🗺️ OpenStreetMap POIs</span>
+                    <span class="about-pill">🧮 TSP 2-opt Routing</span>
+                    <span class="about-pill">📊 Budget ML Prediction</span>
+                    <span class="about-pill">🔁 Personalised History</span>
+                    <span class="about-pill">⚡ FastAPI + Spring Boot</span>
+                </div>
+            </div>
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop"
+                    alt="Data and travel tech">
             </div>
         </div>
     </section>
 
-    <!-- ========== Authentication Modal ========== -->
+    <!-- ═══════════════════════════════════════════
+     PHASE 4: TESTIMONIALS SLIDER
+═══════════════════════════════════════════ -->
+    <section class="section slider-section alt" id="testimonials">
+        <div class="slider-header">
+            <div>
+                <p class="section-label">Travellers Love Us</p>
+                <h2 class="section-title">Real Stories, Real Trips</h2>
+            </div>
+            <div class="slider-arrows">
+                <button class="arrow-btn" onclick="slide('testiTrack',-1)" aria-label="Previous">&#10094;</button>
+                <button class="arrow-btn" onclick="slide('testiTrack', 1)" aria-label="Next">&#10095;</button>
+            </div>
+        </div>
+        <div class="slider-track" id="testiTrack">
+
+            <div class="testi-card">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">"I gave it 4 days and ₹15,000 for Jaipur. It planned Amber Fort in the morning
+                    before the crowds and grouped everything by area. No wasted Ola rides. Absolutely brilliant."</p>
+                <div class="testi-author">
+                    <img class="testi-avatar" src="https://i.pravatar.cc/80?img=12" alt="Priya S.">
+                    <div>
+                        <div class="testi-name">Priya Sharma</div>
+                        <div class="testi-loc">📍 Mumbai</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testi-card">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">"Used it for a solo Goa trip. It auto-detected I'd done museums before and gave me
+                    different beaches and shacks. The personalisation actually works!"</p>
+                <div class="testi-author">
+                    <img class="testi-avatar" src="https://i.pravatar.cc/80?img=33" alt="Rahul M.">
+                    <div>
+                        <div class="testi-name">Rahul Mehta</div>
+                        <div class="testi-loc">📍 Bangalore</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testi-card">
+                <div class="testi-stars">★★★★☆</div>
+                <p class="testi-text">"The budget green-light feature saved us from overspending in Manali. It told us
+                    upfront we were ₹3,000 over and suggested swapping one activity. Saved the trip!"</p>
+                <div class="testi-author">
+                    <img class="testi-avatar" src="https://i.pravatar.cc/80?img=47" alt="Ananya K.">
+                    <div>
+                        <div class="testi-name">Ananya Kulkarni</div>
+                        <div class="testi-loc">📍 Pune</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testi-card">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">"As a group of 6, we always argue about what to do each day. TravelPro settled
+                    everything. One itinerary, everyone happy. The wishlist feature was a lifesaver."</p>
+                <div class="testi-author">
+                    <img class="testi-avatar" src="https://i.pravatar.cc/80?img=59" alt="Dev P.">
+                    <div>
+                        <div class="testi-name">Dev Patel</div>
+                        <div class="testi-loc">📍 Delhi</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testi-card">
+                <div class="testi-stars">★★★★★</div>
+                <p class="testi-text">"The route optimisation is not a gimmick — it genuinely cut our daily travel time
+                    in Varanasi in half. We saw 7 ghats in a morning comfortably."</p>
+                <div class="testi-author">
+                    <img class="testi-avatar" src="https://i.pravatar.cc/80?img=68" alt="Sneha R.">
+                    <div>
+                        <div class="testi-name">Sneha Rao</div>
+                        <div class="testi-loc">📍 Chennai</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+    <footer class="footer">
+        <div class="footer-logo">
+            <img src="assets/images/icon.png" class="footer-img" alt="TravelPro icon" style="height:32px;width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-right:4px;"> TravelPro</div>
+        <p>© 2025 TravelPro. Built with FastAPI, Spring Boot & OpenStreetMap.</p>
+        <p style="font-size:.8rem;">All routes optimised by real TSP algorithms.</p>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════
+     AUTH MODAL (preserved from original)
+═══════════════════════════════════════════ -->
     <div class="modal-overlay" id="authModal">
         <div class="modal">
             <button class="modal-close" id="closeAuthModal">&times;</button>
-
-            <h2 class="text-center mb-6">Welcome to TravelPro</h2>
-
-            <!-- Auth Tabs -->
+            <h2>Welcome to TravelPro</h2>
             <div class="auth-tabs">
                 <button class="auth-tab active" data-tab="login">Login</button>
                 <button class="auth-tab" data-tab="register">Register</button>
             </div>
 
-            <!-- Login Tab Content -->
+            <!-- Login -->
             <div class="auth-tab-content active" id="loginTab">
                 <form id="loginForm">
                     <div class="form-group">
                         <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" name="email" placeholder="your.email@example.com"
-                            required />
+                        <input type="email" id="loginEmail" name="email" placeholder="your@email.com" required>
                     </div>
-
                     <div class="form-group">
                         <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
-                            required />
+                        <input type="password" id="loginPassword" name="password" placeholder="Your password" required>
                     </div>
-
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        Login
-                    </button>
+                    <div class="error-msg" id="loginError"></div>
+                    <button type="submit" class="btn-full">Login</button>
                 </form>
             </div>
 
-            <!-- Register Tab Content -->
+            <!-- Register -->
             <div class="auth-tab-content" id="registerTab">
                 <form id="registerForm">
                     <div class="form-group">
                         <label for="registerName">Full Name</label>
-                        <input type="text" id="registerName" name="name" placeholder="John Doe" required />
+                        <input type="text" id="registerName" name="name" placeholder="John Doe" required>
                     </div>
-
                     <div class="form-group">
                         <label for="registerEmail">Email</label>
-                        <input type="email" id="registerEmail" name="email" placeholder="your.email@example.com"
-                            required />
+                        <input type="email" id="registerEmail" name="email" placeholder="your@email.com" required>
                     </div>
-
                     <div class="form-group">
                         <label for="registerPassword">Password</label>
                         <input type="password" id="registerPassword" name="password"
-                            placeholder="Create a strong password" required />
+                            placeholder="Create a strong password" required>
                     </div>
-
                     <div class="form-group">
                         <label for="registerConfirmPassword">Confirm Password</label>
                         <input type="password" id="registerConfirmPassword" name="confirmPassword"
-                            placeholder="Re-enter your password" required />
+                            placeholder="Re-enter password" required>
                     </div>
-
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        Register
-                    </button>
+                    <div class="error-msg" id="registerError"></div>
+                    <button type="submit" class="btn-full">Create Account</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript -->
+    <!-- ═══════════════════════════════════════════
+     PHASE 5: JAVASCRIPT
+═══════════════════════════════════════════ -->
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
+
+    <script>
+        // ── Slider arrow controls (called from onclick attrs in HTML) ──────────────
+        function slide(trackId, direction) {
+            document.getElementById(trackId).scrollBy({ left: direction * 340, behavior: 'smooth' });
+        }
+
+        // ── Auto-slide: left → right, seamless loop ───────────────────────────────
+        function startAutoSlide(trackId, intervalMs) {
+            const track = document.getElementById(trackId);
+            if (!track) return;
+
+            let timer = setInterval(() => autoStep(track), intervalMs);
+
+            function autoStep(el) {
+                const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+                el.scrollLeft = atEnd ? 0 : el.scrollLeft + 340;
+                if (!atEnd) el.scrollBy({ left: 340, behavior: 'smooth' });
+            }
+
+            track.addEventListener('mouseenter', () => clearInterval(timer));
+            track.addEventListener('mouseleave', () => {
+                timer = setInterval(() => autoStep(track), intervalMs);
+            });
+        }
+
+        startAutoSlide('destTrack', 3500);
+        startAutoSlide('testiTrack', 4500);
+
+        // ── Generate Itinerary button ─────────────────────────────────────────────
+        // app.js handles the modal open/close and auth forms.
+        // This just stores the destination and decides where to send the user.
+        document.getElementById('generateBtn').addEventListener('click', function () {
+            const dest = document.getElementById('destInput').value.trim();
+            if (dest) sessionStorage.setItem('prefilledDestination', dest);
+
+            const token = localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
+            if (token) {
+                window.location.href = 'create-trip.html';
+            } else {
+                openAuthModal(); // defined in app.js
+            }
+        });
+
+        // ── If already logged in: swap "Plan a Trip" → "Go to Dashboard" ────────
+        (function () {
+            const token = localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
+            const user = localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.USER_DATA);
+            if (token && user) {
+                const btn = document.getElementById('planTripBtn');
+                if (btn) {
+                    btn.innerHTML = 'Go to Dashboard';
+                    btn.onclick = (e) => { e.preventDefault(); window.location.href = 'dashboard.html'; };
+                }
+            }
+        })();
+
+        // ── Sticky nav shadow on scroll ───────────────────────────────────────────
+        window.addEventListener('scroll', () => {
+            document.querySelector('.nav').style.boxShadow =
+                window.scrollY > 10 ? '0 4px 24px rgba(0,0,0,.12)' : '';
+        });
+    </script>
+
 </body>
 
 </html>
