@@ -145,12 +145,66 @@ function logout() {
 }
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated (synchronous localStorage check only).
+ * For server-side validation use validateSession().
  * @returns {boolean}
  */
 function isAuthenticated() {
     const token = localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
     return !!token;
+}
+
+/**
+ * Validate the stored token against the CURRENT backend instance.
+ *
+ * Call this at the top of every protected page (dashboard, create-trip, …).
+ * If the backend was restarted since the user last logged in, the token will
+ * be rejected (401) and the user is sent back to the landing page to log in
+ * again.
+ *
+ * Usage:
+ *   await validateSession();   // inside an async DOMContentLoaded handler
+ *
+ * @param {string} [redirectTo='index.html'] - where to redirect on failure
+ */
+async function validateSession(redirectTo = 'index.html') {
+    const token = localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
+
+    // No token at all → definitely not logged in
+    if (!token) {
+        window.location.href = redirectTo;
+        return false;
+    }
+
+    // Skip validation when running in mock mode (no backend)
+    if (typeof MOCK_MODE !== 'undefined' && MOCK_MODE) return true;
+
+    try {
+        const res = await fetch(`${API_CONFIG.BACKEND_URL}/auth/validate`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) return true;          // token is valid for this instance
+
+        // 401 = backend restarted (or token tampered) → force re-login
+        console.warn('[Auth] Session invalidated by server restart – clearing storage');
+        _clearSession(redirectTo);
+        return false;
+
+    } catch (networkErr) {
+        // Backend is completely unreachable → clear session & redirect
+        console.warn('[Auth] Backend unreachable – clearing session:', networkErr.message);
+        _clearSession(redirectTo);
+        return false;
+    }
+}
+
+/** Internal helper: wipe all auth data and redirect */
+function _clearSession(redirectTo) {
+    localStorage.removeItem(APP_CONSTANTS.STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(APP_CONSTANTS.STORAGE_KEYS.USER_DATA);
+    localStorage.removeItem(APP_CONSTANTS.STORAGE_KEYS.USER_TRIPS);
+    window.location.href = redirectTo;
 }
 
 /**
@@ -177,6 +231,7 @@ if (typeof module !== 'undefined' && module.exports) {
         register,
         logout,
         isAuthenticated,
+        validateSession,
         getCurrentUser,
         getAuthToken
     };

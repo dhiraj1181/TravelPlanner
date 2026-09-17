@@ -8,7 +8,8 @@ let allDestinations = [];
 let currentCity = '';
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    if (!await validateSession()) return; // redirect if backend restarted
     initializeDestinations();
 });
 

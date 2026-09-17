@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -20,46 +20,209 @@
     <link rel="icon" type="image/png" href="assets/images/icon.png">
 
     <style>
-        /* Dashboard-specific layout styles */
-        body {
-            display: flex;
-        }
+        /* ── Layout ─────────────────────────────────────────────── */
+        body { display: flex; }
 
         .main-content {
             flex: 1;
             margin-left: 250px;
-            padding: var(--space-8);
-            background-color: var(--color-gray-50);
+            padding: 0;
+            background: #f4f6f5;
             min-height: 100vh;
+            font-family: 'Inter', sans-serif;
         }
 
-        .dashboard-header {
-            margin-bottom: var(--space-8);
+        /* ── Greeting Banner ────────────────────────────────────── */
+        .dash-banner {
+            background: linear-gradient(130deg, #1a3d2b 0%, #24553b 45%, #2d7a52 100%);
+            padding: 2.4rem 2.6rem 2rem;
+            position: relative;
+            overflow: hidden;
         }
-
-        .dashboard-header-top {
+        .dash-banner::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 60% 80% at 80% -10%, rgba(255,255,255,.07) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 60% at 10% 120%, rgba(255,255,255,.05) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        /* Subtle decorative rings */
+        .dash-banner::after {
+            content: '';
+            position: absolute;
+            right: -60px; top: -60px;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            border: 40px solid rgba(255,255,255,.04);
+            pointer-events: none;
+        }
+        .dash-banner-inner {
+            position: relative;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: var(--space-2);
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .dash-banner-text {}
+        .dash-time-chip {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.18);
+            color: rgba(255,255,255,.85);
+            font-size: .73rem; font-weight: 600;
+            padding: .25rem .7rem; border-radius: 20px;
+            letter-spacing: .04em; margin-bottom: .65rem;
+        }
+        .dash-greeting {
+            font-size: clamp(1.55rem, 3vw, 2.1rem);
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.15;
+            margin: 0 0 .4rem;
+            font-family: 'Playfair Display', serif;
+        }
+        .dash-greeting em {
+            font-style: normal;
+            background: linear-gradient(90deg,#86efac,#4ade80);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dash-subtext {
+            font-size: .92rem;
+            color: rgba(255,255,255,.72);
+            margin: 0;
+        }
+        /* Create Trip CTA inside banner */
+        .dash-cta {
+            display: inline-flex; align-items: center; gap: .5rem;
+            padding: .85rem 1.6rem;
+            background: #fff;
+            color: #1a3d2b;
+            border: none; border-radius: 12px;
+            font-size: .92rem; font-weight: 700;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 20px rgba(0,0,0,.2);
+            transition: transform .18s, box-shadow .18s;
+            white-space: nowrap;
+        }
+        .dash-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0,0,0,.28);
         }
 
-        .trips-grid {
+        /* ── Mini Stats Strip ───────────────────────────────────── */
+        .dash-stats {
+            display: flex; gap: 1px;
+            background: #e2e8e4;
+            border-bottom: 1px solid #e2e8e4;
+        }
+        .dash-stat {
+            flex: 1;
+            background: #fff;
+            padding: .9rem 1.4rem;
+            display: flex; align-items: center; gap: .75rem;
+        }
+        .dash-stat-icon {
+            font-size: 1.4rem;
+        }
+        .dash-stat-num {
+            font-size: 1.25rem; font-weight: 800; color: #0f1923; line-height: 1;
+        }
+        .dash-stat-label {
+            font-size: .72rem; color: #7c8b99; margin-top: 1px; font-weight: 500;
+        }
+
+        /* ── Section Wrapper ────────────────────────────────────── */
+        .dash-section {
+            padding: 2rem 2.6rem;
+        }
+        .dash-section-head {
+            display: flex; align-items: baseline; justify-content: space-between;
+            margin-bottom: 1.2rem;
+        }
+        .dash-section-title {
+            font-size: 1.05rem; font-weight: 700; color: #0f1923;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .dash-section-link {
+            font-size: .8rem; color: #24553b; font-weight: 600;
+            text-decoration: none;
+        }
+        .dash-section-link:hover { text-decoration: underline; }
+
+        /* ── Template Cards Grid ────────────────────────────────── */
+        .templates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: var(--space-6);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.2rem;
         }
-
+        .tpl-card {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e5ebe8;
+            box-shadow: 0 2px 12px rgba(0,0,0,.06);
+            transition: transform .22s ease, box-shadow .22s ease;
+            cursor: pointer;
+        }
+        .tpl-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(36,85,59,.14);
+        }
+        .tpl-cover {
+            width: 100%; height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+        .tpl-body {
+            padding: 1rem 1.1rem .9rem;
+        }
+        .tpl-badge {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .22rem .65rem;
+            background: #f0fdf4; color: #15803d;
+            border: 1px solid #bbf7d0;
+            border-radius: 20px;
+            font-size: .72rem; font-weight: 600;
+            margin-bottom: .55rem;
+        }
+        .tpl-title {
+            font-size: .98rem; font-weight: 700; color: #0f1923;
+            margin: 0 0 .25rem;
+            font-family: 'Playfair Display', serif;
+        }
+        .tpl-desc {
+            font-size: .8rem; color: #64748b; margin: 0 0 .85rem;
+            line-height: 1.4;
+        }
+        .tpl-btn {
+            display: inline-flex; align-items: center; gap: .35rem;
+            padding: .5rem 1.1rem;
+            border: 1.5px solid #24553b;
+            color: #24553b; background: transparent;
+            border-radius: 8px;
+            font-size: .82rem; font-weight: 700;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: background .15s, color .15s;
+            width: 100%;
+            justify-content: center;
+        }
+        .tpl-btn:hover { background: #24553b; color: #fff; }
+            100% { background-position: -200% 0; }
+        /* ── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 900px) {
+            .dash-stats { flex-wrap: wrap; }
+            .dash-stat  { flex: 1 0 45%; }
+        }
         @media (max-width: 768px) {
-            .main-content {
-                margin-left: 0;
-            }
-
-            .trips-grid {
-                grid-template-columns: 1fr;
-            }
+            .main-content { margin-left: 0; }
+            .dash-banner  { padding: 1.6rem 1.2rem 1.4rem; }
+            .dash-section { padding: 1.4rem 1.2rem; }
         }
     </style>
+
 </head>
 
 <body>
@@ -151,46 +314,148 @@
 
     <!-- ========== Main Content Area ========== -->
     <main class="main-content">
-        <!-- Dashboard Header -->
-        <header class="dashboard-header">
-            <div class="dashboard-header-top">
-                <div>
-                    <h1 id="welcomeMessage">Welcome back, Dhiraj_verma</h1>
-                    <p style="color: var(--color-gray-600);">Manage your travel plans</p>
+
+        <!-- ══════════════════════════════════════════
+             PHASE 1: DYNAMIC GREETING BANNER
+        ══════════════════════════════════════════ -->
+        <div class="dash-banner">
+            <div class="dash-banner-inner">
+                <div class="dash-banner-text">
+                    <div class="dash-time-chip" id="timeChip">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="timeLabel">Good morning</span>
+                    </div>
+                    <h1 class="dash-greeting">
+                        Welcome back, <em id="welcomeName">Explorer</em> ✈️
+                    </h1>
+                    <p class="dash-subtext">Ready to plan your next adventure? Your perfect trip is one click away.</p>
                 </div>
-                <button class="btn btn-primary" id="createTripBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
+                <button class="dash-cta" id="createTripBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5V19M5 12H19"/>
                     </svg>
-                    Create Trip
+                    Create New Trip
                 </button>
-            </div>
-        </header>
-
-        <!-- Trips Grid -->
-        <div id="tripsContainer">
-            <!-- Trips will be dynamically loaded here -->
-            <!-- Empty state shown when no trips -->
-            <div class="empty-state" id="emptyState">
-                <!-- Location pin icon -->
-                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z"
-                        fill="currentColor" />
-                </svg>
-                <h2 class="empty-state-title">No trips yet</h2>
-                <p class="empty-state-description">Start planning your first adventure</p>
-                <button class="btn btn-primary" onclick="window.location.href='create-trip.html'">
-                    Create Your First Trip
-                </button>
-            </div>
-
-            <!-- Trips will be rendered here when available -->
-            <div class="trips-grid hidden" id="tripsGrid">
-                <!-- Trip cards will be dynamically inserted here -->
             </div>
         </div>
+
+        <!-- ── Mini Stats Strip ── -->
+        <!-- <div class="dash-stats">
+            <div class="dash-stat">
+                <span class="dash-stat-icon">✈️</span>
+                <div>
+                    <div class="dash-stat-num" id="statTrips">—</div>
+                    <div class="dash-stat-label">Trips Planned</div>
+                </div>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-icon">🌍</span>
+                <div>
+                    <div class="dash-stat-num" id="statCities">—</div>
+                    <div class="dash-stat-label">Cities Explored</div>
+                </div>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-icon">📅</span>
+                <div>
+                    <div class="dash-stat-num" id="statDays">—</div>
+                    <div class="dash-stat-label">Days Travelled</div>
+                </div>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-icon">💰</span>
+                <div>
+                    <div class="dash-stat-num" id="statBudget">—</div>
+                    <div class="dash-stat-label">Total Budget</div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- ══════════════════════════════════════════
+             PHASE 2: QUICK START TEMPLATES
+        ══════════════════════════════════════════ -->
+        <section class="dash-section">
+            <div class="dash-section-head">
+                <div class="dash-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#24553b"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Quick Start Templates
+                </div>
+                <a href="destinations.html" class="dash-section-link">View all →</a>
+            </div>
+
+            <div class="templates-grid">
+
+                <!-- Template 1: Jaipur Heritage -->
+                <div class="tpl-card" id="tpl-jaipur">
+                    <img class="tpl-cover"
+                         src="https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&q=80"
+                         alt="Jaipur Hawa Mahal"
+                         onerror="this.src='https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=80'">
+                    <div class="tpl-body">
+                        <div class="tpl-badge">🧭 3 Days &nbsp;·&nbsp; History Focus</div>
+                        <h3 class="tpl-title">The Jaipur Heritage Trail</h3>
+                        <p class="tpl-desc">Forts, palaces &amp; bazaars. A curated TSP-optimised route through the Pink City.</p>
+                        <button class="tpl-btn" onclick="useTemplate('Jaipur',3,12000)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Use Template
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 2: Goa Coastal -->
+                <div class="tpl-card" id="tpl-goa">
+                    <img class="tpl-cover"
+                         src="https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80"
+                         alt="Goa Beach"
+                         onerror="this.src='https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80'">
+                    <div class="tpl-body">
+                        <div class="tpl-badge">🏖️ 4 Days &nbsp;·&nbsp; Beach &amp; Food</div>
+                        <h3 class="tpl-title">Goa Coastal Escape</h3>
+                        <p class="tpl-desc">Sun-drenched beaches, Portuguese cathedrals &amp; legendary seafood spots.</p>
+                        <button class="tpl-btn" onclick="useTemplate('Goa',4,18000)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Use Template
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template 3: Varanasi Spiritual -->
+                <div class="tpl-card" id="tpl-varanasi">
+                    <img class="tpl-cover"
+                         src="https://images.unsplash.com/photo-1561361513-2d000a50f36d?w=600&q=80"
+                         alt="Varanasi Ghats"
+                         onerror="this.src='https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80'">
+                    <div class="tpl-body">
+                        <div class="tpl-badge">🕉️ 2 Days &nbsp;·&nbsp; Culture &amp; Spiritual</div>
+                        <h3 class="tpl-title">Varanasi Ghat Pilgrimage</h3>
+                        <p class="tpl-desc">Sunrise boat rides, ancient ghats &amp; the timeless spiritual heart of India.</p>
+                        <button class="tpl-btn" onclick="useTemplate('Varanasi',2,8000)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Use Template
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
     </main>
 
     <!-- JavaScript -->
@@ -199,142 +464,121 @@
     <script src="js/app.js"></script>
 
     <script>
-        /**
-         * Dashboard initialization and trip loading
-         */
+        /* DASHBOARD INIT */
         document.addEventListener('DOMContentLoaded', function () {
-            // Check if user is authenticated
             checkAuthentication();
-
-            // Load user data
             loadUserData();
-
-            // Load user's trips
-            loadTrips();
-
-            // Event listeners
             document.getElementById('createTripBtn').addEventListener('click', function () {
                 window.location.href = 'create-trip.html';
             });
-
-            document.getElementById('logoutBtn').addEventListener('click', function () {
-                logout();
-            });
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            const h = new Date().getHours();
+            document.getElementById('timeLabel').textContent =
+                h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
         });
 
-        /**
-         * Check if user is authenticated, redirect to home if not
-         */
         function checkAuthentication() {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                window.location.href = 'index.html';
-            }
+            if (!localStorage.getItem('authToken')) window.location.href = 'index.html';
         }
 
-        /**
-         * Load user data from localStorage and display
-         */
         function loadUserData() {
             const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-
             if (userData.name) {
-                document.getElementById('userName').textContent = userData.name;
-                document.getElementById('welcomeMessage').textContent = `Welcome back, ${userData.name}`;
-
-                // Set avatar initial
-                const initial = userData.name.charAt(0).toUpperCase();
-                document.getElementById('userAvatar').textContent = initial;
+                document.getElementById('welcomeName').textContent = userData.name;
+                document.getElementById('userName').textContent    = userData.name;
+                document.getElementById('userAvatar').textContent  = userData.name.charAt(0).toUpperCase();
             }
-
-            if (userData.email) {
-                document.getElementById('userEmail').textContent = userData.email;
-            }
+            if (userData.email) document.getElementById('userEmail').textContent = userData.email;
         }
 
-        /**
-         * Load user's trips from localStorage
-         */
-        function loadTrips() {
-            const trips = JSON.parse(localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.USER_TRIPS) || '[]');
-
-            if (!trips || trips.length === 0) {
-                document.getElementById('emptyState').classList.remove('hidden');
-                document.getElementById('tripsGrid').classList.add('hidden');
-            } else {
-                document.getElementById('emptyState').classList.add('hidden');
-                document.getElementById('tripsGrid').classList.remove('hidden');
-                renderTrips(trips);
-            }
-        }
-
-        /**
-         * Render trips in the grid
-         */
-        function renderTrips(trips) {
-            const grid = document.getElementById('tripsGrid');
-            grid.innerHTML = '';
-
-            trips.forEach(trip => {
-                const card = createTripCard(trip);
-                grid.appendChild(card);
-            });
-        }
-
-        /**
-         * Create a trip card element
-         */
-        function createTripCard(trip) {
-            const card = document.createElement('div');
-            card.className = 'trip-card';
-            card.onclick = () => viewItinerary(trip.id);
-
-            card.innerHTML = `
-                <div class="trip-card-body">
-                    <h3 class="trip-card-title">${trip.title || trip.destination}</h3>
-                    <p style="color: var(--color-gray-600); font-size: var(--font-size-sm);">
-                        ${trip.destination}
-                    </p>
-                    <div class="trip-card-meta">
-                        <div class="trip-card-meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-                                <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                            ${trip.days} days
-                        </div>
-                        <div class="trip-card-meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="12" y1="1" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M17 5H9.5C7.01472 5 5 7.01472 5 9.5C5 11.9853 7.01472 14 9.5 14H14.5C16.9853 14 19 16.0147 19 18.5C19 20.9853 16.9853 23 14.5 23H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            ₹${trip.budget}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            return card;
-        }
-
-        /**
-         * Navigate to itinerary view
-         */
-        function viewItinerary(tripId) {
-            window.location.href = `itinerary.html?id=${tripId}`;
-        }
-
-        /**
-         * Logout user
-         */
         function logout() {
             localStorage.removeItem('authToken');
             localStorage.removeItem('userData');
             window.location.href = 'index.html';
         }
+
+        /* USE TEMPLATE — instantly builds a sample itinerary and opens itinerary.html */
+        const TEMPLATE_DATA = {
+            Jaipur: {
+                title: 'The Jaipur Heritage Trail', days: 3, budget: 12000,
+                dayByDay: [
+                    { day: 1, theme: 'Forts & Palaces', pois: [
+                        { name: 'Amber Fort',         type: 'history',  lat: 26.9855, lon: 75.8513, duration: 3,   cost: 200 },
+                        { name: 'Nahargarh Fort',     type: 'history',  lat: 26.9382, lon: 75.8148, duration: 2,   cost: 100 },
+                        { name: 'Jaigarh Fort',       type: 'history',  lat: 26.9917, lon: 75.8437, duration: 1.5, cost: 100 }]},
+                    { day: 2, theme: 'Palaces & Bazaars', pois: [
+                        { name: 'City Palace',        type: 'culture',  lat: 26.9258, lon: 75.8237, duration: 2,   cost: 200 },
+                        { name: 'Hawa Mahal',         type: 'culture',  lat: 26.9239, lon: 75.8267, duration: 1,   cost: 50  },
+                        { name: 'Johari Bazaar',      type: 'shopping', lat: 26.9195, lon: 75.8240, duration: 2,   cost: 0   }]},
+                    { day: 3, theme: 'Culture & Cuisine', pois: [
+                        { name: 'Jantar Mantar',      type: 'history',  lat: 26.9248, lon: 75.8243, duration: 1.5, cost: 100 },
+                        { name: 'Albert Hall Museum', type: 'museum',   lat: 26.9110, lon: 75.8197, duration: 2,   cost: 40  },
+                        { name: 'Chokhi Dhani',       type: 'food',     lat: 26.7903, lon: 75.8384, duration: 3,   cost: 800 }]}
+                ]
+            },
+            Goa: {
+                title: 'Goa Coastal Escape', days: 4, budget: 18000,
+                dayByDay: [
+                    { day: 1, theme: 'North Beach Trail', pois: [
+                        { name: 'Baga Beach',         type: 'nature',   lat: 15.5569, lon: 73.7528, duration: 3,   cost: 0    },
+                        { name: 'Anjuna Flea Market', type: 'shopping', lat: 15.5734, lon: 73.7425, duration: 2,   cost: 0    },
+                        { name: 'Chapora Fort',       type: 'history',  lat: 15.5994, lon: 73.7390, duration: 1.5, cost: 0    }]},
+                    { day: 2, theme: 'Heritage & Churches', pois: [
+                        { name: 'Basilica of Bom Jesus', type: 'culture', lat: 15.5009, lon: 73.9116, duration: 1.5, cost: 0  },
+                        { name: 'Se Cathedral',       type: 'culture',  lat: 15.5025, lon: 73.9122, duration: 1,   cost: 0    },
+                        { name: 'Old Goa Museum',     type: 'museum',   lat: 15.5006, lon: 73.9124, duration: 1.5, cost: 20   }]},
+                    { day: 3, theme: 'South Goa Serenity', pois: [
+                        { name: 'Palolem Beach',      type: 'nature',   lat: 15.0098, lon: 74.0230, duration: 4,   cost: 0    },
+                        { name: 'Cabo de Rama Fort',  type: 'history',  lat: 14.9748, lon: 73.9782, duration: 1.5, cost: 0    }]},
+                    { day: 4, theme: 'Food & Nightlife', pois: [
+                        { name: 'Calangute Beach',    type: 'nature',   lat: 15.5440, lon: 73.7523, duration: 2,   cost: 0    },
+                        { name: 'Thalassa Greek',     type: 'food',     lat: 15.6003, lon: 73.7398, duration: 1.5, cost: 1200 },
+                        { name: 'Sinquerim Beach',    type: 'nightlife',lat: 15.5174, lon: 73.7665, duration: 2,   cost: 500  }]}
+                ]
+            },
+            Varanasi: {
+                title: 'Varanasi Ghat Pilgrimage', days: 2, budget: 8000,
+                dayByDay: [
+                    { day: 1, theme: 'Sacred Ghats & Temples', pois: [
+                        { name: 'Dashashwamedh Ghat',     type: 'culture',   lat: 25.3065, lon: 83.0134, duration: 2,   cost: 0   },
+                        { name: 'Kashi Vishwanath Temple',type: 'culture',   lat: 25.3110, lon: 83.0107, duration: 1.5, cost: 0   },
+                        { name: 'Manikarnika Ghat',       type: 'culture',   lat: 25.3100, lon: 83.0114, duration: 1,   cost: 0   },
+                        { name: 'Ganga Aarti (Evening)',  type: 'culture',   lat: 25.3065, lon: 83.0134, duration: 1.5, cost: 0   }]},
+                    { day: 2, theme: 'Sunrise & Sarnath', pois: [
+                        { name: 'Sunrise Boat Ride', type: 'adventure', lat: 25.3065, lon: 83.0134, duration: 2,   cost: 300 },
+                        { name: 'Sarnath Stupa',     type: 'history',   lat: 25.3766, lon: 83.0237, duration: 2,   cost: 30  },
+                        { name: 'Sarnath Museum',    type: 'museum',    lat: 25.3761, lon: 83.0243, duration: 1.5, cost: 25  },
+                        { name: 'Assi Ghat',         type: 'culture',   lat: 25.2993, lon: 83.0156, duration: 1,   cost: 0   }]}
+                ]
+            }
+        };
+
+        function useTemplate(city, days, budget) {
+            const tpl = TEMPLATE_DATA[city];
+            if (!tpl) { window.location.href = 'create-trip.html'; return; }
+
+            const poiTotal  = tpl.dayByDay.flatMap(d => d.pois).reduce((s, p) => s + (p.cost || 0), 0);
+            const estimated = Math.round(poiTotal + (tpl.days * 800));
+
+            const customTrip = {
+                id:          'tpl-' + city.toLowerCase() + '-' + Date.now(),
+                title:       tpl.title,
+                destination: city,
+                days:        tpl.days,
+                budget:      tpl.budget,
+                startDate:   null,
+                _isTemplate: true,
+                itinerary: {
+                    greenSignal:   estimated <= tpl.budget,
+                    estimatedCost: estimated,
+                    dayByDay:      tpl.dayByDay
+                }
+            };
+
+            sessionStorage.setItem('customItinerary', JSON.stringify(customTrip));
+            window.location.href =
+                `itinerary.html?mode=custom&city=${encodeURIComponent(city)}&id=${customTrip.id}`;
+        }
     </script>
 </body>
-
 </html>

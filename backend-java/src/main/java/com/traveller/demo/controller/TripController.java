@@ -53,7 +53,7 @@ public class TripController {
      * POST /api/trips/plan - Plan a new trip for the requesting user.
      */
     @PostMapping("/plan")
-    public ResponseEntity<TripResponse> planTrip(
+    public ResponseEntity<?> planTrip(
             @Valid @RequestBody TripPlanRequest request,
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
 
@@ -67,11 +67,19 @@ public class TripController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (RuntimeException e) {
-            log.error("Runtime error planning trip: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            // Surface the real reason to the caller (frontend + logs)
+            String msg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            log.error("Runtime error planning trip: {}", msg, e);
+            java.util.Map<String, String> err = new java.util.HashMap<>();
+            err.put("error", msg);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+
         } catch (Exception e) {
-            log.error("Error planning trip: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            String msg = e.getMessage() != null ? e.getMessage() : "Internal error";
+            log.error("Error planning trip: {}", msg, e);
+            java.util.Map<String, String> err = new java.util.HashMap<>();
+            err.put("error", msg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
         }
     }
 

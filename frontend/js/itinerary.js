@@ -4,7 +4,8 @@
  */
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    if (!await validateSession()) return; // redirect if backend restarted
     initializeItineraryPage();
 });
 
@@ -52,10 +53,12 @@ async function loadTripById(tripId) {
 
     // Real API call
     const token = getAuthToken();
+    const user = JSON.parse(localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.USER_DATA) || '{}');
     const endpoint = API_CONFIG.ENDPOINTS.GET_TRIP_BY_ID.replace(':id', tripId);
     const response = await fetch(`${API_CONFIG.BACKEND_URL}${endpoint}`, {
         headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'X-User-Id': user.id ? String(user.id) : ''
         }
     });
 

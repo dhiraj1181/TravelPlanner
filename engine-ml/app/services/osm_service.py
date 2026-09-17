@@ -1,4 +1,4 @@
-"""
+﻿"""
 OpenStreetMap Service
 Fetches POI data from Overpass API (OpenStreetMap)
 Free, no API key required
@@ -11,12 +11,19 @@ import time
 logger = logging.getLogger(__name__)
 
 # Overpass API mirrors — tried in order; first success wins
+# Ordered by reliability/speed; dead mirrors removed.
 OVERPASS_MIRRORS = [
-    "https://overpass-api.de/api/interpreter",          # primary
-    "https://overpass.kumi.systems/api/interpreter",    # EU mirror
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",  # Russian mirror
-    "https://overpass.openstreetmap.ru/api/interpreter", # RU mirror
+    "https://overpass-api.de/api/interpreter",           # primary (DE)
+    "https://overpass.kumi.systems/api/interpreter",     # EU mirror (AT)
+    "https://overpass.private.coffee/api/interpreter",  # fast EU mirror
+    "https://overpass.openstreetmap.fr/api/interpreter", # FR mirror
 ]
+# Per-mirror HTTP timeout (seconds). Short = fail fast, move to next mirror.
+_MIRROR_TIMEOUT = 15
+
+# Max tags per Overpass sub-query batch.
+# Large batches (30+ tags) time out on major cities — keep to ≤7.
+_MAX_TAGS_PER_BATCH = 7
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 # Interest to OSM tags mapping
@@ -124,148 +131,388 @@ INDIAN_CITIES_COORDS = {
     "mysore": {"lat": 12.2958, "lon": 76.6394},
     "bareilly": {"lat": 28.3670, "lon": 79.4304},
     "thiruvananthapuram": {"lat": 8.5241, "lon": 76.9366},
+    # NCR satellite cities -- DISTINCT cities, each with its own geocentre
+    "noida": {"lat": 28.5355, "lon": 77.3910},
+    "greater noida": {"lat": 28.4744, "lon": 77.5040},
+    "gurgaon": {"lat": 28.4595, "lon": 77.0266},
+    "gurugram": {"lat": 28.4595, "lon": 77.0266},
+    "ghaziabad": {"lat": 28.6692, "lon": 77.4538},
     "trivandrum": {"lat": 8.5241, "lon": 76.9366},
+    # Additional cities shown on landing page
+    "manali": {"lat": 32.2396, "lon": 77.1887},
+    "rishikesh": {"lat": 30.0869, "lon": 78.2676},
+    "darjeeling": {"lat": 27.0360, "lon": 88.2627},
+    "kerala": {"lat": 10.8505, "lon": 76.2711},
+    "ooty": {"lat": 11.4102, "lon": 76.6950},
+    "shimla": {"lat": 31.1048, "lon": 77.1734},
+    "udaipur": {"lat": 24.5854, "lon": 73.7125},
+    "pushkar": {"lat": 26.4898, "lon": 74.5511},
+    "hampi": {"lat": 15.3350, "lon": 76.4600},
+    "pondicherry": {"lat": 11.9416, "lon": 79.8083},
+    "puducherry": {"lat": 11.9416, "lon": 79.8083},
+    # East & North-East India
+    "bhubaneswar": {"lat": 20.2961, "lon": 85.8245},
+    "cuttack": {"lat": 20.4625, "lon": 85.8830},
+    "puri": {"lat": 19.8135, "lon": 85.8312},
+    "rourkela": {"lat": 22.2604, "lon": 84.8536},
+    "imphal": {"lat": 24.8170, "lon": 93.9368},
+    "shillong": {"lat": 25.5788, "lon": 91.8933},
+    "aizawl": {"lat": 23.7271, "lon": 92.7176},
+    "kohima": {"lat": 25.6747, "lon": 94.1100},
+    "agartala": {"lat": 23.8315, "lon": 91.2868},
+    "itanagar": {"lat": 27.0844, "lon": 93.6053},
+    "gangtok": {"lat": 27.3389, "lon": 88.6065},
+    "dibrugarh": {"lat": 27.4728, "lon": 94.9120},
+    "siliguri": {"lat": 26.7271, "lon": 88.3953},
+    "durgapur": {"lat": 23.5204, "lon": 87.3119},
+    "asansol": {"lat": 23.6888, "lon": 86.9661},
+    # South India
+    "kochi": {"lat": 9.9312, "lon": 76.2673},
+    "cochin": {"lat": 9.9312, "lon": 76.2673},
+    "kozhikode": {"lat": 11.2588, "lon": 75.7804},
+    "calicut": {"lat": 11.2588, "lon": 75.7804},
+    "thrissur": {"lat": 10.5276, "lon": 76.2144},
+    "kollam": {"lat": 8.8932, "lon": 76.6141},
+    "kottayam": {"lat": 9.5916, "lon": 76.5222},
+    "mangalore": {"lat": 12.9141, "lon": 74.8560},
+    "mangaluru": {"lat": 12.9141, "lon": 74.8560},
+    "hubli": {"lat": 15.3647, "lon": 75.1240},
+    "dharwad": {"lat": 15.4589, "lon": 75.0078},
+    "belgaum": {"lat": 15.8497, "lon": 74.4977},
+    "belagavi": {"lat": 15.8497, "lon": 74.4977},
+    "tumkur": {"lat": 13.3379, "lon": 77.1173},
+    "tirupati": {"lat": 13.6288, "lon": 79.4192},
+    "tirunelveli": {"lat": 8.7139, "lon": 77.7567},
+    "vellore": {"lat": 12.9165, "lon": 79.1325},
+    "thanjavur": {"lat": 10.7870, "lon": 79.1378},
+    "tanjore": {"lat": 10.7870, "lon": 79.1378},
+    "tiruchirappalli": {"lat": 10.7905, "lon": 78.7047},
+    "trichy": {"lat": 10.7905, "lon": 78.7047},
+    "salem": {"lat": 11.6643, "lon": 78.1460},
+    "erode": {"lat": 11.3410, "lon": 77.7172},
+    # North India
+    "dehradun": {"lat": 30.3165, "lon": 78.0322},
+    "haridwar": {"lat": 29.9457, "lon": 78.1642},
+    "nainital": {"lat": 29.3803, "lon": 79.4636},
+    "mussoorie": {"lat": 30.4598, "lon": 78.0664},
+    "almora": {"lat": 29.5975, "lon": 79.6532},
+    "kasauli": {"lat": 30.8993, "lon": 76.9657},
+    "dharamsala": {"lat": 32.2190, "lon": 76.3234},
+    "mcleod ganj": {"lat": 32.2427, "lon": 76.3234},
+    "dalhousie": {"lat": 32.5382, "lon": 75.9737},
+    "spiti": {"lat": 32.2461, "lon": 78.0339},
+    "leh": {"lat": 34.1526, "lon": 77.5771},
+    "ladakh": {"lat": 34.1526, "lon": 77.5771},
+    "kargil": {"lat": 34.5539, "lon": 76.1349},
+    "ambala": {"lat": 30.3782, "lon": 76.7767},
+    "karnal": {"lat": 29.6857, "lon": 76.9905},
+    "panipat": {"lat": 29.3909, "lon": 76.9635},
+    "rohtak": {"lat": 28.8955, "lon": 76.6066},
+    "hisar": {"lat": 29.1492, "lon": 75.7217},
+    "mathura": {"lat": 27.4924, "lon": 77.6737},
+    "vrindavan": {"lat": 27.5795, "lon": 77.7024},
+    "ayodhya": {"lat": 26.7922, "lon": 82.1998},
+    "gorakhpur": {"lat": 26.7606, "lon": 83.3732},
+    # West India
+    "nashik": {"lat": 19.9975, "lon": 73.7898},
+    "kolhapur": {"lat": 16.7050, "lon": 74.2433},
+    "sangli": {"lat": 16.8524, "lon": 74.5815},
+    "akola": {"lat": 20.7002, "lon": 77.0082},
+    "nanded": {"lat": 19.1383, "lon": 77.3210},
+    "jamnagar": {"lat": 22.4707, "lon": 70.0577},
+    "bhavnagar": {"lat": 21.7645, "lon": 72.1519},
+    "anand": {"lat": 22.5645, "lon": 72.9289},
+    "gandhinagar": {"lat": 23.2156, "lon": 72.6369},
+    "mount abu": {"lat": 24.5926, "lon": 72.7156},
+    "jaisalmer": {"lat": 26.9157, "lon": 70.9083},
+    "bikaner": {"lat": 28.0229, "lon": 73.3119},
+    "ajmer": {"lat": 26.4499, "lon": 74.6399},
+    "bharatpur": {"lat": 27.2152, "lon": 77.4890},
+    "alwar": {"lat": 27.5530, "lon": 76.6346},
+    "chittorgarh": {"lat": 24.8887, "lon": 74.6269},
+    # Central India
+    "ujjain": {"lat": 23.1793, "lon": 75.7849},
+    "gwalior": {"lat": 26.2183, "lon": 78.1828},
+    "orchha": {"lat": 25.3516, "lon": 78.6404},
+    "khajuraho": {"lat": 24.8318, "lon": 79.9199},
+    "pachmarhi": {"lat": 22.4677, "lon": 78.4338},
+    "amarkantak": {"lat": 22.6741, "lon": 81.7594},
+    "rewa": {"lat": 24.5362, "lon": 81.3035},
+    "satna": {"lat": 24.5703, "lon": 80.8322},
+    "bilaspur": {"lat": 22.0796, "lon": 82.1391},
+    "jagdalpur": {"lat": 19.0720, "lon": 82.0180},
 }
 
+
+# ── Alias / alternate-spelling map ──────────────────────────────────────────
+# Maps common misspellings, alternate names, and old names → canonical key
+# in INDIAN_CITIES_COORDS.  All keys are lowercase.
+CITY_ALIASES: Dict[str, str] = {
+    # Misspellings (common user typos)
+    "bhuneswar": "bhubaneswar",
+    "bhuvaneshwar": "bhubaneswar",
+    "bhuvneshwar": "bhubaneswar",
+    "bhubneshwar": "bhubaneswar",
+    "bhuneshwar": "bhubaneswar",
+    "bhubaneswar": "bhubaneswar",
+    "vishakhapatnam": "visakhapatnam",
+    "vizag": "visakhapatnam",
+    "vizakhapatnam": "visakhapatnam",
+    "banglore": "bangalore",
+    "bangaluru": "bengaluru",
+    "bangluru": "bengaluru",
+    "dilli": "delhi",
+    "new delhi": "delhi",
+    "ncr": "delhi",
+    "mumbai": "mumbai",
+    "bombay": "mumbai",
+    "calcutta": "kolkata",
+    "kolkatta": "kolkata",
+    "madras": "chennai",
+    "poona": "pune",
+    "mysuru": "mysore",
+    "mysore": "mysore",
+    "trichy": "tiruchirappalli",
+    "trichirappalli": "tiruchirappalli",
+    "tanjore": "thanjavur",
+    "calicut": "kozhikode",
+    "cochin": "kochi",
+    "ernakulam": "kochi",
+    "trivandrum": "thiruvananthapuram",
+    "ahemdabad": "ahmedabad",
+    "ahamadabad": "ahmedabad",
+    # NCR typo-only aliases (these cities are DISTINCT from Delhi — map to their own entry)
+    "gurugram": "gurgaon",      # official rename; same coordinates
+    "greater noida": "greater noida",
+    "ghaziabad": "ghaziabad",
+    "faridabadabad": "faridabad",  # typo fix only
+    "allahbad": "allahabad",
+    "prayagraj": "prayagraj",
+    "mcleodganj": "mcleod ganj",
+    "dharamshala": "dharamsala",
+    "dharmshala": "dharamsala",
+    "jamshedpur": "ranchi",   # closest city in DB
+    "bokaro": "ranchi",
+    "hazaribagh": "ranchi",
+    "ooty": "ooty",
+    "udhagamandalam": "ooty",
+    "pondichery": "puducherry",
+    "pondy": "puducherry",
+    "pondichery": "puducherry",
+    "manali": "manali",
+    "kasol": "manali",
+    "solang": "manali",
+    "leh ladakh": "leh",
+    "ladhak": "ladakh",
+    "ladhakh": "ladakh",
+    "mclo": "mcleod ganj",
+    # Common abbreviations / alternative spellings
+    "blr": "bangalore",
+    "del": "delhi",
+    "bom": "mumbai",
+    "ccu": "kolkata",
+    "maa": "chennai",
+    "hyd": "hyderabad",
+    "pnq": "pune",
+    "amd": "ahmedabad",
+    "jai": "jaipur",
+    "vns": "varanasi",
+    "ixb": "siliguri",
+    "bbi": "bhubaneswar",
+}
 
 
 class OSMService:
     """Service for fetching POI data from OpenStreetMap"""
-    
+
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'TravelPro/1.0 (Travel Planning App)'
         })
     
+    @staticmethod
+    def _normalise_city(city_name: str) -> str:
+        """Lowercase, strip, collapse whitespace."""
+        return ' '.join(city_name.lower().strip().split())
+
     def geocode_city(self, city_name: str) -> Optional[Dict[str, float]]:
         """
-        Get coordinates for a city using Nominatim or offline fallback
-        
-        Args:
-            city_name: Name of the city
-            
-        Returns:
-            Dictionary with 'lat' and 'lon' keys, or None if not found
+        Resolve a city name to (lat, lon) using a 4-stage pipeline:
+
+          1. Alias map   — catches misspellings & alternate names instantly
+          2. Offline DB  — 200+ Indian cities; zero network cost
+          3. Nominatim   — REST geocoding (countrycode=IN for accuracy)
+          4. Nominatim retry — wider search without countrycode restriction
+
+        Returns dict with 'lat'/'lon', or None if all stages fail.
         """
-        # Try offline database first (faster and more reliable)
-        city_lower = city_name.lower().strip()
-        if city_lower in INDIAN_CITIES_COORDS:
-            logger.info(f"Using offline coordinates for {city_name}")
-            return INDIAN_CITIES_COORDS[city_lower]
-        
-        # Try Nominatim API as fallback
+        city_norm = self._normalise_city(city_name)
+
+        # Stage 1 — alias mapping (handles typos like 'bhuneswar')
+        if city_norm in CITY_ALIASES:
+            canonical = CITY_ALIASES[city_norm]
+            logger.info(f"Alias match: '{city_name}' → '{canonical}'")
+            city_norm = canonical
+
+        # Stage 2 — offline coordinate database
+        if city_norm in INDIAN_CITIES_COORDS:
+            logger.info(f"Offline DB hit for '{city_norm}'")
+            return INDIAN_CITIES_COORDS[city_norm]
+
+        # Stage 3 — Nominatim (India-scoped)
+        coords = self._nominatim_lookup(city_name, countrycode='IN')
+        if coords:
+            logger.info(f"Nominatim (IN) resolved '{city_name}' → {coords}")
+            # Cache in-memory so repeat requests are instant
+            INDIAN_CITIES_COORDS[city_norm] = coords
+            return coords
+
+        # Stage 4 — Nominatim without country restriction (catches edge cases)
+        coords = self._nominatim_lookup(city_name, countrycode=None)
+        if coords:
+            logger.info(f"Nominatim (global) resolved '{city_name}' → {coords}")
+            INDIAN_CITIES_COORDS[city_norm] = coords
+            return coords
+
+        logger.error(
+            f"Could not geocode '{city_name}'. "
+            "Check spelling — e.g. 'Bhubaneswar' not 'bhuneswar'."
+        )
+        return None
+
+    def _nominatim_lookup(
+        self, city_name: str, countrycode: Optional[str]
+    ) -> Optional[Dict[str, float]]:
+        """Single Nominatim HTTP call.  Returns coords dict or None."""
+        params: Dict = {
+            'q': city_name,
+            'format': 'json',
+            'limit': 1,
+            'addressdetails': 0,
+        }
+        if countrycode:
+            params['countrycodes'] = countrycode
+
+        scope = f"countrycode={countrycode}" if countrycode else "global"
+        logger.info(f"Nominatim lookup [{scope}]: {city_name}")
         try:
-            params = {
-                'q': f"{city_name}, India",
-                'format': 'json',
-                'limit': 1
-            }
-            
-            logger.info(f"Geocoding city via Nominatim: {city_name}")
-            response = self.session.get(NOMINATIM_URL, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
+            resp = self.session.get(NOMINATIM_URL, params=params, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
             if data:
-                result = data[0]
-                coords = {
-                    'lat': float(result['lat']),
-                    'lon': float(result['lon'])
+                return {
+                    'lat': float(data[0]['lat']),
+                    'lon': float(data[0]['lon'])
                 }
-                logger.info(f"Geocoded {city_name} via Nominatim to {coords}")
-                return coords
-            
-            logger.warning(f"No Nominatim result for {city_name}")
-            return None
-            
-        except Exception as e:
-            logger.warning(f"Nominatim error for {city_name}: {e}, trying offline database")
-            return None
+            logger.warning(f"Nominatim [{scope}]: no result for '{city_name}'")
+        except Exception as exc:
+            logger.warning(f"Nominatim [{scope}] error for '{city_name}': {exc}")
+        return None
     
-    def fetch_pois_for_city(self, city_name: str, interests: List[str], 
-                           radius_km: float = 50, limit: int = 250) -> List[Dict]:
+    def _query_overpass(self, query: str) -> Optional[Dict]:
         """
-        Fetch POIs from OpenStreetMap Overpass API
-        
+        Try each Overpass mirror in order; return the first successful JSON response.
+        Returns None if every mirror fails.
+        """
+        for mirror_idx, mirror_url in enumerate(OVERPASS_MIRRORS):
+            try:
+                logger.info(
+                    f"Trying Overpass mirror {mirror_idx + 1}/{len(OVERPASS_MIRRORS)}: "
+                    f"{mirror_url.split('/')[2]}"
+                )
+                response = self.session.post(
+                    mirror_url,
+                    data={'data': query},
+                    timeout=_MIRROR_TIMEOUT
+                )
+                response.raise_for_status()
+                return response.json()
+            except requests.exceptions.Timeout:
+                logger.warning(f"Mirror {mirror_url.split('/')[2]} timed out, trying next...")
+                if mirror_idx < len(OVERPASS_MIRRORS) - 1:
+                    time.sleep(1)
+            except requests.exceptions.HTTPError as e:
+                logger.warning(f"Mirror {mirror_url.split('/')[2]} HTTP error: {e}, trying next...")
+                if mirror_idx < len(OVERPASS_MIRRORS) - 1:
+                    time.sleep(1)
+            except Exception as e:
+                logger.warning(f"Mirror {mirror_url.split('/')[2]} error: {e}, trying next...")
+        logger.error("All Overpass mirrors failed")
+        return None
+
+    def fetch_pois_for_city(self, city_name: str, interests: List[str],
+                            radius_km: float = 30, limit: int = 200) -> List[Dict]:
+        """
+        Fetch POIs from OpenStreetMap via Overpass API.
+
+        Uses BATCHED queries: instead of one request with 30+ sub-queries
+        (which times out on large cities), sends multiple small requests
+        with at most _MAX_TAGS_PER_BATCH tags each. Results are merged,
+        de-duplicated by OSM ID, and trimmed to `limit`.
+
         Args:
-            city_name: Name of the city
-            interests: List of user interests
-            radius_km: Search radius in kilometers
-            limit: Maximum number of POIs to fetch
-            
-        Returns:
-            List of POI dictionaries
+            city_name:  City to search
+            interests:  Interest categories (museum, food, nature …)
+            radius_km:  Search radius from city centre (default 30 km)
+            limit:      Maximum POIs to return
         """
-        # First, get city coordinates
         coords = self.geocode_city(city_name)
         if not coords:
             logger.error(f"Could not geocode {city_name}")
             return []
-        
-        # Build Overpass query based on interests
+
         osm_tags = self._map_interests_to_tags(interests)
         if not osm_tags:
             logger.warning("No OSM tags for interests, using default")
             osm_tags = ["tourism=attraction"]
-        
-        query = self._build_overpass_query(
-            coords['lat'], coords['lon'], 
-            radius_km * 1000,  # Convert to meters
-            osm_tags
+
+        radius_m = int(radius_km * 1000)
+
+        # ─ Split tags into small batches so each query is light ───────────────
+        batches = [
+            osm_tags[i:i + _MAX_TAGS_PER_BATCH]
+            for i in range(0, len(osm_tags), _MAX_TAGS_PER_BATCH)
+        ]
+        logger.info(
+            f"Fetching POIs for {city_name}: {len(osm_tags)} tags → "
+            f"{len(batches)} batches (max {_MAX_TAGS_PER_BATCH} tags each)"
         )
-        
-        try:
-            logger.info(f"Fetching POIs for {city_name} from Overpass API")
-            logger.debug(f"Query: {query[:200]}...")
 
-            pois = None
-            for mirror_idx, mirror_url in enumerate(OVERPASS_MIRRORS):
-                try:
-                    logger.info(
-                        f"Trying Overpass mirror {mirror_idx + 1}/{len(OVERPASS_MIRRORS)}: "
-                        f"{mirror_url.split('/')[2]}"
-                    )
-                    response = self.session.post(
-                        mirror_url,
-                        data={'data': query},
-                        timeout=45
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    pois = self._parse_overpass_response(
-                        data, city_name, interests,
-                        city_lat=coords['lat'], city_lon=coords['lon']
-                    )
-                    if pois:
-                        logger.info(
-                            f"Fetched {len(pois)} POIs from "
-                            f"{mirror_url.split('/')[2]}"
-                        )
-                        break
-                    logger.warning("Mirror returned 0 POIs, trying next...")
+        all_pois: List[Dict] = []
+        seen_ids: set = set()
 
-                except requests.exceptions.Timeout:
-                    logger.warning(
-                        f"Mirror {mirror_url.split('/')[2]} timed out, trying next..."
-                    )
-                    if mirror_idx < len(OVERPASS_MIRRORS) - 1:
-                        time.sleep(2)
-                except requests.exceptions.HTTPError as e:
-                    logger.warning(
-                        f"Mirror {mirror_url.split('/')[2]} HTTP error: {e}, trying next..."
-                    )
-                    if mirror_idx < len(OVERPASS_MIRRORS) - 1:
-                        time.sleep(2)
+        for batch_num, batch_tags in enumerate(batches, 1):
+            query = self._build_overpass_query(
+                coords['lat'], coords['lon'], radius_m, batch_tags
+            )
+            logger.debug(f"Batch {batch_num}/{len(batches)}: {batch_tags}")
 
-            if not pois:
-                logger.error("All Overpass mirrors failed or returned no data")
-                return []
-            return pois[:limit]
+            data = self._query_overpass(query)
+            if data is None:
+                logger.warning(f"Batch {batch_num} failed on all mirrors, skipping")
+                continue
 
-        except Exception as e:
-            logger.error(f"Error fetching POIs from Overpass: {e}", exc_info=True)
-            return []
+            batch_pois = self._parse_overpass_response(
+                data, city_name, interests,
+                city_lat=coords['lat'], city_lon=coords['lon']
+            )
+
+            # De-duplicate by osm_id across batches
+            for poi in batch_pois:
+                oid = poi.get('osm_id')
+                if oid and oid not in seen_ids:
+                    seen_ids.add(oid)
+                    all_pois.append(poi)
+
+            logger.info(f"Batch {batch_num}/{len(batches)}: +{len(batch_pois)} POIs (total {len(all_pois)})")
+
+            # Stop early if we already have enough
+            if len(all_pois) >= limit:
+                break
+
+        logger.info(f"Finished: {len(all_pois)} unique POIs for {city_name}")
+        return all_pois[:limit]
     
     def _map_interests_to_tags(self, interests: List[str]) -> List[str]:
         """Convert user interests to OSM tags"""
@@ -297,7 +544,7 @@ class OSMService:
             )
 
         query = (
-            f"[out:json][timeout:25];\n"
+            f"[out:json][timeout:{_MIRROR_TIMEOUT}];\n"
             f"(\n"
             + "\n".join(f"  {q}" for q in queries)
             + "\n);\nout center;"
@@ -327,8 +574,15 @@ class OSMService:
 
     def _within_city_radius(self, lat: float, lon: float,
                             city_lat: float, city_lon: float,
-                            max_km: float = 60.0) -> bool:
-        """Return True if (lat,lon) is within max_km of city centre."""
+                            max_km: float = 30.0) -> bool:
+        """Return True if (lat,lon) is within max_km of city centre.
+
+        30 km matches the default Overpass search radius so that OSM ways
+        whose centre point is computed far from the search area (large rivers,
+        forests, etc.) are rejected.  Tighter than the old 60 km limit which
+        was accidentally including towns like Lonavala (65 km from Pune) and
+        Mahabaleshwar (120 km from Pune) via the background-fetch 50 km radius.
+        """
         import math
         R = 6371.0
         phi1, phi2 = math.radians(city_lat), math.radians(lat)

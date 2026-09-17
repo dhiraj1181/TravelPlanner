@@ -390,7 +390,271 @@
                 display: none;
             }
         }
+
+        /* ════════════════════════════════════════════════════════
+           CUSTOMISE ITINERARY DRAWER
+        ════════════════════════════════════════════════════════ */
+        .cust-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.45);
+            backdrop-filter: blur(3px);
+            z-index: 1400;
+            opacity: 0; pointer-events: none;
+            transition: opacity .3s ease;
+        }
+        .cust-overlay.open { opacity: 1; pointer-events: all; }
+
+        .cust-drawer {
+            position: fixed; top: 0; right: -110%;
+            width: min(600px, 96vw);
+            height: 100vh;
+            background: #fff;
+            z-index: 1500;
+            display: flex; flex-direction: column;
+            box-shadow: -8px 0 40px rgba(0,0,0,.18);
+            transition: right .38s cubic-bezier(.4,0,.2,1);
+            border-radius: 16px 0 0 16px;
+        }
+        .cust-drawer.open { right: 0; }
+
+        /* Drawer header */
+        .cust-header {
+            padding: 1.2rem 1.4rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #24553b 0%, #38a169 100%);
+            border-radius: 16px 0 0 0;
+        }
+        .cust-header-top {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: .4rem;
+        }
+        .cust-title {
+            font-size: 1.05rem; font-weight: 700;
+            color: #fff;
+            display: flex; align-items: center; gap: .5rem;
+        }
+        .cust-subtitle { font-size: .8rem; color: rgba(255,255,255,.75); }
+        .cust-close {
+            width: 32px; height: 32px;
+            border-radius: 50%; border: 1.5px solid rgba(255,255,255,.4);
+            background: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; transition: background .15s;
+        }
+        .cust-close:hover { background: rgba(255,255,255,.15); }
+
+        /* POI list area */
+        .cust-body {
+            flex: 1; overflow-y: auto;
+            padding: 1rem 1.4rem;
+        }
+        .cust-day-group { margin-bottom: 1.2rem; }
+        .cust-day-label {
+            font-size: .78rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .06em;
+            color: #24553b; margin-bottom: .5rem;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .cust-day-label::after {
+            content: ''; flex: 1;
+            height: 1px; background: #e5e7eb;
+        }
+
+        /* POI checkbox rows */
+        .cust-poi-row {
+            display: flex; align-items: center; gap: .7rem;
+            padding: .55rem .65rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: .4rem;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            user-select: none;
+        }
+        .cust-poi-row:hover { border-color: #24553b; background: #f0fdf4; }
+        .cust-poi-row.checked { border-color: #24553b; background: #f0fdf4; }
+
+        .cust-poi-check {
+            width: 18px; height: 18px;
+            border-radius: 5px;
+            border: 2px solid #d1d5db;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: all .15s;
+            background: #fff;
+        }
+        .cust-poi-row.checked .cust-poi-check {
+            background: #24553b; border-color: #24553b;
+        }
+        .cust-poi-check svg { display: none; }
+        .cust-poi-row.checked .cust-poi-check svg { display: block; }
+
+        .cust-poi-name { flex: 1; font-size: .88rem; font-weight: 500; color: #111827; }
+        .cust-poi-meta { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
+        .cust-meta-chip {
+            font-size: .72rem; padding: .15rem .45rem;
+            border-radius: 20px; font-weight: 500;
+        }
+        .cust-chip-type     { background: #dcfce7; color: #15803d; }
+        .cust-chip-duration { background: #dbeafe; color: #1d4ed8; }
+        .cust-chip-cost     { background: #ffedd5; color: #c2410c; }
+        .cust-chip-free     { background: #dcfce7; color: #15803d; }
+
+        /* Footer controls */
+        .cust-footer {
+            padding: 1rem 1.4rem;
+            border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
+            background: #f9fafb;
+        }
+        .cust-controls {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap; gap: .8rem;
+            margin-bottom: .9rem;
+        }
+
+        /* Day stepper */
+        .cust-days-wrap {
+            display: flex; align-items: center; gap: .6rem;
+        }
+        .cust-days-label { font-size: .85rem; font-weight: 600; color: #374151; }
+        .cust-stepper {
+            display: flex; align-items: center;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px; overflow: hidden;
+        }
+        .cust-step-btn {
+            width: 32px; height: 32px;
+            border: none; background: #fff;
+            cursor: pointer;
+            font-size: 1.1rem; font-weight: 700; color: #374151;
+            transition: background .12s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cust-step-btn:hover { background: #f3f4f6; }
+        .cust-step-btn:disabled { opacity: .35; cursor: not-allowed; }
+        .cust-day-count {
+            min-width: 36px;
+            text-align: center;
+            font-size: .95rem; font-weight: 700; color: #1f2937;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            padding: 0 .4rem;
+            line-height: 32px;
+        }
+
+        /* Budget display */
+        .cust-budget-bar {
+            display: flex; align-items: center;
+            gap: .8rem;
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            border-radius: 10px;
+            padding: .65rem 1rem;
+            font-size: .85rem;
+        }
+        .cust-budget-icon { font-size: 1.3rem; }
+        .cust-budget-details { flex: 1; }
+        .cust-budget-amount {
+            font-size: 1.15rem; font-weight: 800;
+            color: #15803d;
+        }
+        .cust-budget-sub { font-size: .75rem; color: #6b7280; margin-top: 1px; }
+        .cust-selected-count {
+            font-size: .78rem; font-weight: 600;
+            color: #374151;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            padding: .25rem .65rem;
+            border-radius: 20px;
+        }
+
+        /* Action buttons */
+        .cust-actions {
+            display: flex; gap: .7rem;
+        }
+        .cust-cancel-btn {
+            flex: 1;
+            padding: .75rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            color: #374151;
+            font-size: .9rem; font-weight: 600;
+            cursor: pointer; font-family: inherit;
+            transition: background .15s;
+        }
+        .cust-cancel-btn:hover { background: #f9fafb; }
+        .cust-gen-btn {
+            flex: 2;
+            padding: .75rem;
+            background: linear-gradient(135deg,#24553b,#38a169);
+            color: #fff;
+            border: none; border-radius: 10px;
+            font-size: .9rem; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            transition: transform .15s, box-shadow .15s;
+            display: flex; align-items: center; justify-content: center; gap: .4rem;
+        }
+        .cust-gen-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(36,85,59,.38);
+        }
+        .cust-gen-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Btn inside card actions */
+        .btn-customise {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .35rem .8rem;
+            border-radius: 8px;
+            border: 1.5px solid #24553b;
+            background: transparent; color: #24553b;
+            font-size: .78rem; font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .15s; white-space: nowrap;
+        }
+        .btn-customise:hover { background: #24553b; color: #fff; }
+
+        /* Source-trip chips row */
+        .cust-src-section {
+            padding: .75rem 1.4rem .5rem;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+            background: #fafafa;
+        }
+        .cust-src-label {
+            font-size: .72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .07em;
+            color: #64748b; margin-bottom: .45rem;
+        }
+        .cust-src-trips { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .cust-trip-chip {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .3rem .7rem;
+            border-radius: 20px;
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            color: #374151;
+            font-size: .78rem; font-weight: 600;
+            cursor: pointer;
+            transition: all .18s;
+            font-family: inherit;
+            user-select: none;
+        }
+        .cust-trip-chip:hover { border-color: #24553b; color: #24553b; }
+        .cust-trip-chip.active {
+            background: #24553b; border-color: #24553b;
+            color: #fff; box-shadow: 0 2px 8px rgba(36,85,59,.28);
+        }
+        .cust-trip-chip .chip-check { font-size: .75rem; }
+        .cust-src-hint {
+            font-size: .71rem; color: #94a3b8; margin-top: .35rem;
+        }
     </style>
+
 </head>
 
 <body>
@@ -672,6 +936,10 @@
                         </span>
                     </div>
                     <div class="card-actions">
+                        <button class="btn-customise" title="Build a custom itinerary from this trip's POIs"
+                            onclick="event.stopPropagation(); openCustomModal(${JSON.stringify(trip.id)})">
+                            ✏️ Customise
+                        </button>
                         <button class="btn-delete" title="Delete trip" onclick="event.stopPropagation(); deleteTrip(${trip.id}, this)">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -780,7 +1048,357 @@
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3000);
         }
-    </script>
-</body>
 
+        /* ════════════════════════════════════════════════════════
+           CUSTOMISE ITINERARY — MULTI-TRIP MERGE
+        ════════════════════════════════════════════════════════ */
+        let _custCity        = '';   // Active city (normalised lower-case)
+        let _custDays        = 2;    // Chosen output days
+        let _custActiveTripIds = new Set(); // Which source trip IDs are toggled ON
+        const MAX_DAYS = 10;
+
+        /* ── Open drawer seeded from a specific trip ── */
+        function openCustomModal(tripId) {
+            const seed = allTrips.find(t => String(t.id) === String(tripId));
+            if (!seed) return;
+
+            _custCity = seed.destination.toLowerCase();
+
+            // All trips to the same city (case-insensitive)
+            const sameCityTrips = allTrips.filter(
+                t => t.destination.toLowerCase() === _custCity &&
+                     (t.itinerary?.dayByDay || []).some(d => (d.pois || []).length > 0)
+            );
+
+            if (sameCityTrips.length === 0) {
+                showToast('No POI data found for this city.', true); return;
+            }
+
+            // Seed trip is ON; everything else is OFF by default
+            _custActiveTripIds = new Set([String(tripId)]);
+
+            // Default days = max days in seed trip, clamped
+            _custDays = Math.min(Math.max(seed.days || 2, 1), MAX_DAYS);
+
+            // Header
+            const cityDisplay = seed.destination;
+            document.getElementById('custTitle').textContent = `Customise — ${cityDisplay}`;
+            document.getElementById('custSubtitle').textContent =
+                `${sameCityTrips.length} trip${sameCityTrips.length !== 1 ? 's' : ''} to ${cityDisplay} in your history`;
+
+            // Render source-trip chips
+            _renderTripChips(sameCityTrips);
+
+            // Render merged POI list
+            _rebuildPoiList();
+
+            // Reset day stepper
+            document.getElementById('custDayCount').textContent = _custDays;
+            document.getElementById('custDecBtn').disabled = _custDays <= 1;
+            document.getElementById('custIncBtn').disabled = _custDays >= MAX_DAYS;
+
+            // Open drawer
+            document.getElementById('custOverlay').classList.add('open');
+            document.getElementById('custDrawer').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        /* ── Build source-trip toggle chips ── */
+        function _renderTripChips(trips) {
+            const container = document.getElementById('custSrcTrips');
+            container.innerHTML = '';
+            trips.forEach(t => {
+                const isActive = _custActiveTripIds.has(String(t.id));
+                const poiCount = (t.itinerary?.dayByDay || []).reduce(
+                    (s, d) => s + (d.pois || []).length, 0
+                );
+                const dateStr = t.startDate
+                    ? new Date(t.startDate).toLocaleDateString('en-IN',
+                        { day: 'numeric', month: 'short', year: '2-digit' })
+                    : `${t.days}d trip`;
+
+                const chip = document.createElement('button');
+                chip.className = 'cust-trip-chip' + (isActive ? ' active' : '');
+                chip.dataset.tripId = t.id;
+                chip.innerHTML = `
+                    <span class="chip-check">${isActive ? '✓' : '+'}</span>
+                    ${t.title || t.destination}
+                    <span style="opacity:.7;font-size:.7rem">(${poiCount} POIs · ${dateStr})</span>
+                `;
+                chip.addEventListener('click', () => _toggleSourceTrip(String(t.id), trips));
+                container.appendChild(chip);
+            });
+        }
+
+        /* ── Toggle a source trip on/off ── */
+        function _toggleSourceTrip(tripId, allSameCityTrips) {
+            if (_custActiveTripIds.has(tripId)) {
+                // Don't allow deselecting the last trip
+                if (_custActiveTripIds.size === 1) {
+                    showToast('At least one trip must be selected.', true);
+                    return;
+                }
+                _custActiveTripIds.delete(tripId);
+            } else {
+                _custActiveTripIds.add(tripId);
+            }
+            _renderTripChips(allSameCityTrips);
+            _rebuildPoiList();
+        }
+
+        /* ── Rebuild the merged, deduplicated POI list ── */
+        function _rebuildPoiList() {
+            const body = document.getElementById('custBody');
+            body.innerHTML = '';
+
+            // Gather POIs from all active trips, organised per (trip → day)
+            // Deduplicate by normalised POI name across trips
+            const seen = new Set();  // normalised names already added
+            let totalPois = 0;
+
+            allTrips
+                .filter(t => _custActiveTripIds.has(String(t.id)))
+                .forEach(trip => {
+                    const days = trip.itinerary?.dayByDay || [];
+                    const dateLabel = trip.startDate
+                        ? new Date(trip.startDate).toLocaleDateString('en-IN',
+                            { day: 'numeric', month: 'short', year: '2-digit' })
+                        : `${trip.days}d trip`;
+
+                    // Section header for this trip
+                    const tripSection = document.createElement('div');
+                    tripSection.style.cssText = 'margin-bottom:1rem;';
+
+                    const tripHeader = document.createElement('div');
+                    tripHeader.className = 'cust-trip-section-header';
+                    tripHeader.innerHTML = `
+                        <span style="
+                            display:inline-flex;align-items:center;gap:.35rem;
+                            font-size:.78rem;font-weight:700;color:#24553b;
+                            text-transform:uppercase;letter-spacing:.06em;
+                            margin-bottom:.5rem;
+                        ">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            ${trip.title || trip.destination} — ${dateLabel}
+                        </span>`;
+                    tripSection.appendChild(tripHeader);
+
+                    let hasVisiblePoi = false;
+
+                    days.forEach((dayData, di) => {
+                        const pois = dayData.pois || [];
+                        const freshPois = pois.filter(p => {
+                            const key = p.name.toLowerCase().trim();
+                            if (seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        });
+                        if (freshPois.length === 0) return;
+                        hasVisiblePoi = true;
+
+                        const dateStr = dayData.date
+                            ? new Date(dayData.date).toLocaleDateString('en-IN',
+                                { weekday: 'short', day: 'numeric', month: 'short' })
+                            : '';
+
+                        const group = document.createElement('div');
+                        group.className = 'cust-day-group';
+                        group.style.marginBottom = '.8rem';
+                        group.innerHTML = `<div class="cust-day-label" style="font-size:.72rem;color:#64748b">Day ${di + 1}${dateStr ? ' · ' + dateStr : ''}</div>`;
+
+                        freshPois.forEach(poi => {
+                            const row = document.createElement('div');
+                            row.className = 'cust-poi-row checked';
+                            row.dataset.cost = poi.cost || 0;
+                            row.dataset.duration = poi.duration || 0;
+                            row.dataset.poiJson = JSON.stringify(poi);
+
+                            const costChip = poi.cost > 0
+                                ? `<span class="cust-meta-chip cust-chip-cost">₹${Number(poi.cost).toLocaleString('en-IN')}</span>`
+                                : `<span class="cust-meta-chip cust-chip-free">Free</span>`;
+                            const durChip = poi.duration
+                                ? `<span class="cust-meta-chip cust-chip-duration">⏱ ${poi.duration}h</span>` : '';
+                            const typeChip = poi.type
+                                ? `<span class="cust-meta-chip cust-chip-type">📍 ${_cap(poi.type)}</span>` : '';
+
+                            row.innerHTML = `
+                                <div class="cust-poi-check">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                         stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                                <div class="cust-poi-name">${poi.name}</div>
+                                <div class="cust-poi-meta">${typeChip}${durChip}${costChip}</div>
+                            `;
+                            row.addEventListener('click', () => {
+                                row.classList.toggle('checked');
+                                _updateCustomBudget();
+                            });
+                            group.appendChild(row);
+                            totalPois++;
+                        });
+
+                        tripSection.appendChild(group);
+                    });
+
+                    if (hasVisiblePoi) body.appendChild(tripSection);
+                });
+
+            if (totalPois === 0) {
+                body.innerHTML = '<p style="color:#94a3b8;font-size:.85rem;padding:1rem">No unique POIs found from the selected trips.</p>';
+            }
+
+            _updateCustomBudget();
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custOverlay').classList.remove('open');
+            document.getElementById('custDrawer').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function _custChangeDays(delta) {
+            _custDays = Math.min(Math.max(_custDays + delta, 1), MAX_DAYS);
+            document.getElementById('custDayCount').textContent = _custDays;
+            document.getElementById('custDecBtn').disabled = _custDays <= 1;
+            document.getElementById('custIncBtn').disabled = _custDays >= MAX_DAYS;
+            _updateCustomBudget();
+        }
+
+        function _updateCustomBudget() {
+            const rows = document.querySelectorAll('#custBody .cust-poi-row.checked');
+            const count = rows.length;
+            let poiTotal = 0;
+            rows.forEach(r => { poiTotal += parseFloat(r.dataset.cost || 0); });
+
+            const basePerDay = 800;
+            const estimated  = Math.round(poiTotal + (_custDays * basePerDay));
+
+            document.getElementById('custBudgetAmount').textContent =
+                `₹${estimated.toLocaleString('en-IN')}`;
+            document.getElementById('custBudgetSub').textContent =
+                `POI costs ₹${Math.round(poiTotal).toLocaleString('en-IN')} + ₹${basePerDay}×${_custDays} days base`;
+            document.getElementById('custSelectedCount').textContent =
+                `${count} POI${count !== 1 ? 's' : ''} selected`;
+            document.getElementById('custGenBtn').disabled = count === 0;
+        }
+
+        function _generateCustomItinerary() {
+            const rows = document.querySelectorAll('#custBody .cust-poi-row.checked');
+            const selectedPois = Array.from(rows).map(r => JSON.parse(r.dataset.poiJson));
+            if (selectedPois.length === 0) return;
+
+            // Round-robin distribute across chosen days
+            const dayByDay = Array.from({ length: _custDays }, (_, i) => ({
+                day: i + 1, date: null,
+                theme: `Day ${i + 1} — Custom`,
+                pois: []
+            }));
+            selectedPois.forEach((poi, idx) => dayByDay[idx % _custDays].pois.push(poi));
+
+            const poiTotal  = selectedPois.reduce((s, p) => s + (p.cost || 0), 0);
+            const estimated = Math.round(poiTotal + (_custDays * 800));
+            const srcCount  = _custActiveTripIds.size;
+
+            // Get destination from first active trip
+            const srcTrip = allTrips.find(t => _custActiveTripIds.has(String(t.id)));
+            const dest = srcTrip?.destination || _custCity;
+
+            const customTrip = {
+                id: 'custom-' + Date.now(),
+                title: `Custom ${dest} Trip (${srcCount} source${srcCount !== 1 ? 's' : ''})`,
+                destination: dest,
+                days: _custDays,
+                budget: estimated,
+                startDate: null,
+                itinerary: { greenSignal: true, estimatedCost: estimated, dayByDay }
+            };
+
+            sessionStorage.setItem('customItinerary', JSON.stringify(customTrip));
+            window.location.href =
+                `itinerary.html?mode=custom&city=${encodeURIComponent(dest)}&id=${customTrip.id}`;
+        }
+
+        function _cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+    </script>
+
+    <!-- ════════════════════════════════════════════
+         CUSTOMISE ITINERARY DRAWER  (multi-trip)
+    ════════════════════════════════════════════ -->
+    <div class="cust-overlay" id="custOverlay" onclick="closeCustomModal()"></div>
+    <div class="cust-drawer" id="custDrawer" role="dialog" aria-modal="true" aria-label="Customise itinerary">
+
+        <!-- Green header -->
+        <div class="cust-header">
+            <div class="cust-header-top">
+                <div class="cust-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    <span id="custTitle">Customise Itinerary</span>
+                </div>
+                <button class="cust-close" onclick="closeCustomModal()" aria-label="Close">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="cust-subtitle" id="custSubtitle">Select trips &amp; POIs to include</div>
+        </div>
+
+        <!-- ★ Source-trip toggles ★ -->
+        <div class="cust-src-section">
+            <div class="cust-src-label">📂 Source Trips — toggle to merge:</div>
+            <div class="cust-src-trips" id="custSrcTrips"></div>
+            <div class="cust-src-hint">Duplicate POIs across trips are automatically removed.</div>
+        </div>
+
+        <!-- Merged POI list (scrollable) -->
+        <div class="cust-body" id="custBody"></div>
+
+        <!-- Footer controls -->
+        <div class="cust-footer">
+            <div class="cust-controls">
+                <div class="cust-days-wrap">
+                    <span class="cust-days-label">📅 Number of Days:</span>
+                    <div class="cust-stepper">
+                        <button class="cust-step-btn" id="custDecBtn" onclick="_custChangeDays(-1)">−</button>
+                        <div class="cust-day-count" id="custDayCount">2</div>
+                        <button class="cust-step-btn" id="custIncBtn" onclick="_custChangeDays(1)">+</button>
+                    </div>
+                </div>
+                <div class="cust-selected-count" id="custSelectedCount">0 POIs selected</div>
+            </div>
+
+            <div class="cust-budget-bar" style="margin-bottom:.9rem">
+                <span class="cust-budget-icon">💰</span>
+                <div class="cust-budget-details">
+                    <div class="cust-budget-amount" id="custBudgetAmount">₹0</div>
+                    <div class="cust-budget-sub" id="custBudgetSub">Select POIs to calculate</div>
+                </div>
+            </div>
+
+            <div class="cust-actions">
+                <button class="cust-cancel-btn" onclick="closeCustomModal()">Cancel</button>
+                <button class="cust-gen-btn" id="custGenBtn" onclick="_generateCustomItinerary()" disabled>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Generate Custom Itinerary
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
 </html>

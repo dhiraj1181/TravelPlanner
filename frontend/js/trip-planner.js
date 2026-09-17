@@ -11,7 +11,8 @@ const totalSteps = 3;
 let tripData = {};
 
 // Initialize trip planner when DOM is loaded
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    if (!await validateSession()) return; // redirect if backend restarted
     initializeTripPlanner();
 });
 
@@ -43,6 +44,44 @@ function initializeTripPlanner() {
         const destInput = document.getElementById('destination');
         if (destInput) destInput.value = prefilledDest;
         sessionStorage.removeItem('prefilledDestination'); // clear after use
+    }
+
+    // Auto-fill from Quick Start Template (written by dashboard's useTemplate())
+    const tplRaw = sessionStorage.getItem('tplPrefill');
+    if (tplRaw) {
+        try {
+            const tpl = JSON.parse(tplRaw);
+            sessionStorage.removeItem('tplPrefill');
+
+            const destInput = document.getElementById('destination');
+            if (destInput && tpl.city) destInput.value = tpl.city;
+
+            // Days field (various possible IDs)
+            const daysInput = document.getElementById('tripDays') ||
+                              document.getElementById('days')     ||
+                              document.getElementById('numDays');
+            if (daysInput && tpl.days) daysInput.value = tpl.days;
+
+            // Budget field
+            const budgetInput = document.getElementById('budget');
+            if (budgetInput && tpl.budget) budgetInput.value = tpl.budget;
+
+            // Show a subtle toast so user knows the form was pre-filled
+            const toast = document.createElement('div');
+            toast.textContent = `✨ Template pre-filled: ${tpl.city} · ${tpl.days} days · ₹${Number(tpl.budget).toLocaleString('en-IN')}`;
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '1.5rem', left: '50%',
+                transform: 'translateX(-50%)',
+                background: '#24553b', color: '#fff',
+                padding: '.65rem 1.4rem', borderRadius: '10px',
+                fontSize: '.85rem', fontWeight: '600',
+                boxShadow: '0 4px 18px rgba(0,0,0,.22)',
+                zIndex: '9999', whiteSpace: 'nowrap',
+                animation: 'none'
+            });
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        } catch (e) { /* ignore malformed JSON */ }
     }
 }
 
@@ -357,7 +396,12 @@ async function submitTripForm() {
 
     } catch (error) {
         console.error('Error creating trip:', error);
-        alert('Failed to generate itinerary. Please try again.');
+
+        // Show the real error from the backend, or fall back to a generic message
+        const msg = error.message && error.message !== 'Failed to save trip'
+            ? error.message
+            : 'Could not generate itinerary. Make sure the destination is a valid Indian city and the ML engine is running.';
+        alert(`❌ ${msg}`);
 
         // Restore button
         const nextBtn = document.getElementById('nextBtn');
@@ -460,7 +504,16 @@ async function saveTripToBackend(tripData) {
     });
 
     if (!response.ok) {
-        throw new Error('Failed to save trip');
+        // Spring validation errors use { error:"Bad Request", message:"Validation failed..." }
+        // Our custom errors use { error:"actual reason" }
+        let errorMsg = 'Failed to save trip';
+        try {
+            const errBody = await response.json();
+            // Prefer descriptive message, fall back to error field
+            const detail = errBody?.message || errBody?.error;
+            if (detail && detail !== 'Bad Request') errorMsg = detail;
+        } catch (_) { /* body was empty or not JSON */ }
+        throw new Error(errorMsg);
     }
 
     return await response.json();

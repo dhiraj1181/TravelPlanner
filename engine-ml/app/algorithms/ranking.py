@@ -182,38 +182,57 @@ def rank_and_filter_pois(pois: list, keep_top_n: int,
     import random
 
     selected = []
-    used_ids = set()
+    used_ids: set = set()
+    pool_multiplier = 2  # sample from top 2× candidates per category for variety
 
-    # For each category bucket, sample using score-weights from top candidates
-    pool_multiplier = 2  # Sample from top 2× candidates for variety
+    def _weighted_sample_unique(pool: list, weights: list, n: int) -> list:
+        """
+        Draw up to n unique items from pool using score weights.
+        Safe: never loops more than len(pool) times.
+        """
+        if not pool:
+            return []
+        # Build an index list sorted by weight (desc) with a small random jitter
+        # so same-score items vary between requests
+        indexed = list(range(len(pool)))
+        random.shuffle(indexed)          # jitter
+        indexed.sort(key=lambda i: weights[i], reverse=True)
+        picks = []
+        for i in indexed:
+            if len(picks) >= n:
+                break
+            picks.append(pool[i])
+        return picks
+
+    # Per-category sampling
     for category in ordered_categories:
         if category not in buckets:
             continue
-        # Get top candidates for this bucket
-        candidates = [p for p in buckets[category] if p.get('osm_id', p.get('name', id(p))) not in used_ids]
+        candidates = [
+            p for p in buckets[category]
+            if p.get('osm_id', p.get('name', id(p))) not in used_ids
+        ]
         pool = candidates[:slots_per_category * pool_multiplier]
         if not pool:
             continue
-
-        weights = [max(0.1, p['score'] + 60) for p in pool]  # +60 keeps negatives positive
-
-        count = 0
-        attempts = 0
-        while count < slots_per_category and pool and attempts < slots_per_category * 4:
-            attempts += 1
-            pick = random.choices(pool, weights=weights, k=1)[0]
+        weights = [max(0.1, p['score'] + 60) for p in pool]
+        picks = _weighted_sample_unique(pool, weights, slots_per_category)
+        for pick in picks:
             pick_key = pick.get('osm_id', pick.get('name', id(pick)))
             if pick_key not in used_ids:
                 selected.append(pick)
                 used_ids.add(pick_key)
-                count += 1
 
-    # Fill any remaining slots from global pool (weighted)
+    # Fill remaining slots from global pool — SAFE: iterates at most len(pois) times
     if len(selected) < keep_top_n:
-        remaining_pool = [p for p in pois if p.get('osm_id', p.get('name', id(p))) not in used_ids]
+        remaining_pool = [
+            p for p in pois
+            if p.get('osm_id', p.get('name', id(p))) not in used_ids
+        ]
         remaining_weights = [max(0.1, p['score'] + 60) for p in remaining_pool]
-        while len(selected) < keep_top_n and remaining_pool:
-            pick = random.choices(remaining_pool, weights=remaining_weights, k=1)[0]
+        still_needed = keep_top_n - len(selected)
+        picks = _weighted_sample_unique(remaining_pool, remaining_weights, still_needed)
+        for pick in picks:
             pick_key = pick.get('osm_id', pick.get('name', id(pick)))
             if pick_key not in used_ids:
                 selected.append(pick)

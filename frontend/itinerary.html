@@ -4,155 +4,1419 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="View your travel itinerary">
+    <meta name="description" content="View your AI-generated travel itinerary day-by-day with an interactive map - TravelPro">
     <title>Your Itinerary - TravelPro</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 
-    <!-- Stylesheets -->
+    <!-- Leaflet.js — served locally (CDN blocked on dev network) -->
+    <link rel="stylesheet" href="assets/leaflet.min.css">
+
+
+    <!-- App Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="icon" type="image/png" href="assets/images/icon.png">
 
     <style>
-        body {
-            background-color: var(--color-gray-50);
+        /* ══════════════════════════════════════
+           DESIGN TOKENS & RESET
+        ══════════════════════════════════════ */
+        :root {
+            --primary:        #24553b;
+            --primary-light:  #2d6b49;
+            --primary-dim:    #e8f5ee;
+            --surface:        #ffffff;
+            --surface-2:      #f8fafb;
+            --border:         #e5e9ef;
+            --text-main:      #0f1923;
+            --text-sub:       #5a6473;
+            --text-muted:     #909aaa;
+            --radius-sm:      6px;
+            --radius-md:      12px;
+            --radius-lg:      18px;
+            --shadow-sm:      0 1px 4px rgba(0,0,0,.07);
+            --shadow-md:      0 4px 18px rgba(0,0,0,.10);
+            --shadow-lg:      0 12px 40px rgba(0,0,0,.14);
+            --drawer-w:       52vw;   /* map drawer width on desktop */
         }
 
-        .action-bar {
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-2);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ══════════════════════════════════════
+           TOP NAV BAR
+        ══════════════════════════════════════ */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
             display: flex;
             align-items: center;
-            gap: var(--space-4);
-            margin-bottom: var(--space-6);
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
         }
-
-        .loading-state {
-            text-align: center;
-            padding: var(--space-20);
+        .top-nav-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
         }
-
-        .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--color-gray-300);
-            border-top-color: var(--color-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto var(--space-4);
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        @keyframes heartPop {
-            0%   { transform: scale(1); }
-            40%  { transform: scale(1.35); }
-            100% { transform: scale(1); }
-        }
-
-        /* ── Wishlist heart on POI cards ── */
-        .poi-card {
-            position: relative;
-        }
-        .wishlist-btn {
-            position: absolute;
-            top: 50%;
-            right: var(--space-4);
-            transform: translateY(-50%);
-            width: 34px; height: 34px;
-            border-radius: 50%;
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            color: var(--text-sub);
+            font-size: .85rem;
+            font-weight: 500;
+            text-decoration: none;
+            padding: .4rem .75rem;
+            border-radius: var(--radius-sm);
+            transition: background .15s, color .15s;
+            cursor: pointer;
             border: none;
-            background: rgba(255,255,255,0.95);
+            background: transparent;
+        }
+        .back-link:hover { background: var(--surface-2); color: var(--primary); }
+
+        /* ══════════════════════════════════════
+           MAIN ITINERARY LAYOUT
+        ══════════════════════════════════════ */
+        .itinerary-container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 8rem;
+        }
+
+        /* ── Hero Header ── */
+        .trip-hero {
+            background: linear-gradient(135deg, var(--primary) 0%, #1a3d2b 100%);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem 2rem;
+            margin-bottom: 2rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .trip-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .trip-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 20px;
+            padding: .25rem .7rem;
+            margin-bottom: .85rem;
+        }
+        .trip-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: .5rem;
+        }
+        .trip-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            font-size: .85rem;
+            opacity: .85;
+            margin-top: .75rem;
+        }
+        .trip-hero-meta span { display: flex; align-items: center; gap: .35rem; }
+
+        /* Budget pill */
+        .budget-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .3rem .9rem;
+            border-radius: 20px;
+            font-size: .8rem;
+            font-weight: 600;
+            margin-top: .9rem;
+        }
+        .budget-pill.ok  { background: rgba(52,211,153,.2); color: #6ee7b7; border: 1px solid rgba(52,211,153,.3); }
+        .budget-pill.over{ background: rgba(248,113,113,.2); color: #fca5a5; border: 1px solid rgba(248,113,113,.3); }
+
+        /* ── Day Section ── */
+        .day-section {
+            margin-bottom: 2rem;
+        }
+        .day-heading {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            margin-bottom: 1rem;
+        }
+        .day-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            font-weight: 700;
+            font-size: .95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .day-heading-text h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+        .day-heading-text p {
+            font-size: .8rem;
+            color: var(--text-sub);
+            margin-top: .15rem;
+        }
+
+        /* ── POI Timeline Card ── */
+        .poi-timeline {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .poi-timeline::before {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 20px;
+            bottom: 20px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--primary-dim), transparent);
+        }
+        .poi-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: .85rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: .6rem;
+            position: relative;
+            transition: box-shadow .18s, transform .18s;
+            cursor: default;
+        }
+        .poi-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .poi-step {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--primary-dim);
+            color: var(--primary);
+            font-weight: 700;
+            font-size: .85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px var(--primary-dim);
+        }
+        .poi-info { flex: 1; min-width: 0; }
+        .poi-name {
+            font-weight: 600;
+            font-size: .95rem;
+            margin-bottom: .3rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .poi-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+        }
+        .poi-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .28rem;
+            padding: .18rem .55rem;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 500;
+        }
+        .chip-type     { background: #e8f5ee; color: var(--primary); }
+        .chip-duration { background: #eff6ff; color: #2563eb; }
+        .chip-cost     { background: #fff7ed; color: #c2410c; }
+        .chip-free     { background: #f0fdf4; color: #15803d; }
+        /* Per-POI map pin button */
+        .poi-map-btn {
+            display:inline-flex;align-items:center;gap:.28rem;
+            padding:.22rem .6rem;
+            border-radius:20px;
+            border:1.5px solid #d1fae5;
+            background:#f0fdf4;
+            color:#15803d;
+            font-size:.72rem;font-weight:600;
+            cursor:pointer;
+            transition:all .18s;
+            font-family:inherit;
+            white-space:nowrap;
+            flex-shrink:0;
+        }
+        .poi-map-btn:hover {
+            background:var(--primary);
+            border-color:var(--primary);
+            color:#fff;
+            transform:translateY(-1px);
+            box-shadow:0 2px 8px rgba(36,85,59,.25);
+        }
+        .poi-map-btn:disabled {
+            opacity:.38;cursor:not-allowed;
+            pointer-events:none;
+        }
+        .poi-map-btn svg { flex-shrink:0; }
+
+        /* Wishlist heart */
+        @keyframes heartPop { 0%{transform:scale(1)} 40%{transform:scale(1.4)} 100%{transform:scale(1)} }
+        .wishlist-btn {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-            transition: transform 0.18s ease, background 0.18s ease;
-            z-index: 5;
+            flex-shrink: 0;
+            transition: transform .18s, background .18s, border-color .18s;
         }
-        .wishlist-btn:hover   { transform: translateY(-50%) scale(1.15); }
-        .wishlist-btn.wishlisted { background: #fff0f0; }
-        .wishlist-btn.wishlisted svg { animation: heartPop 0.3s ease; }
+        .wishlist-btn:hover { transform: scale(1.12); border-color: #fca5a5; }
+        .wishlist-btn.wishlisted { background: #fff0f0; border-color: #fca5a5; }
+        .wishlist-btn.wishlisted svg { animation: heartPop .3s ease; }
 
-        /* floating tooltip */
-        .wishlist-tip {
-            position: absolute;
-            top: 50%;
-            right: 56px;
-            transform: translateY(-50%) translateX(6px);
-            background: rgba(30,30,30,0.88);
-            color: #fff; font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.2s, transform 0.2s;
-            pointer-events: none; z-index: 10;
+        /* ── Loading / States ── */
+        .state-card {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
         }
-        .wishlist-tip.visible {
+        .spinner {
+            width: 46px; height: 46px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+
+        /* ══════════════════════════════════════
+           FLOATING MAP BUTTON
+        ══════════════════════════════════════ */
+        .floating-map-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .8rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: .9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(36,85,59,.40);
+            transition: transform .18s, box-shadow .18s;
+            letter-spacing: .01em;
+        }
+        .floating-map-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 32px rgba(36,85,59,.48);
+        }
+        .floating-map-btn:active { transform: scale(.97); }
+        .floating-map-btn svg { flex-shrink: 0; }
+
+        /* PDF button (sits above the map button) */
+        .floating-pdf-btn {
+            position: fixed;
+            bottom: 5.5rem;   /* stacked just above the map button */
+            right: 2rem;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .8rem 1.5rem;
+            background: #fff;
+            color: #1e3a2f;
+            border: 2px solid #24553b;
+            border-radius: 50px;
+            font-size: .9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(36,85,59,.18);
+            transition: transform .18s, box-shadow .18s, background .18s, color .18s;
+            letter-spacing: .01em;
+        }
+        .floating-pdf-btn:hover {
+            background: #24553b;
+            color: #fff;
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 28px rgba(36,85,59,.38);
+        }
+        .floating-pdf-btn:hover svg { stroke: #fff; }
+        .floating-pdf-btn:active { transform: scale(.97); }
+        .floating-pdf-btn svg { stroke: #24553b; flex-shrink: 0; transition: stroke .18s; }
+
+        /* ══════════════════════════════════════
+           PRINT / PDF  STYLES
+        ══════════════════════════════════════ */
+        @media print {
+            /* Hide everything that shouldn't be in the PDF */
+            .floating-map-btn,
+            .floating-pdf-btn,
+            nav, .nav,
+            .drawer-overlay,
+            .map-drawer,
+            #drawerOverlay,
+            #mapDrawer,
+            .poi-map-btn,
+            .wishlist-btn,
+            .back-btn,
+            button:not(.print-visible) { display: none !important; }
+
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            body {
+                background: #fff !important;
+                font-family: 'Inter', Arial, sans-serif;
+                font-size: 11pt;
+                line-height: 1.5;
+                color: #0f172a;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Branded PDF header */
+            body::before {
+                content: '';
+                display: block;
+                width: 100%;
+                height: 6px;
+                background: linear-gradient(90deg, #24553b 0%, #4ade80 100%);
+                margin-bottom: 24pt;
+            }
+
+            main {
+                max-width: 100% !important;
+                padding: 0 24pt !important;
+                margin: 0 !important;
+            }
+
+            /* Trip header */
+            #tripHeader {
+                margin-bottom: 18pt;
+                padding-bottom: 10pt;
+                border-bottom: 2px solid #e2e8f0;
+            }
+            #tripDestination {
+                font-size: 22pt !important;
+                font-weight: 800 !important;
+                color: #24553b !important;
+                margin: 0 0 4pt !important;
+            }
+            #tripMeta {
+                font-size: 10pt;
+                color: #64748b;
+            }
+
+            /* Day sections — keep together, new page per day */
+            .day-section {
+                page-break-inside: avoid;
+                page-break-before: auto;
+                margin-bottom: 20pt;
+                padding: 12pt 0;
+                border-top: 1.5px solid #e2e8f0;
+            }
+            .day-section:first-child { border-top: none; }
+
+            /* Day heading */
+            .day-heading {
+                display: flex !important;
+                align-items: center !important;
+                gap: 10pt !important;
+                margin-bottom: 10pt !important;
+            }
+            .day-badge {
+                width: 30pt !important;
+                height: 30pt !important;
+                background: #24553b !important;
+                color: #fff !important;
+                font-size: 13pt !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-weight: 800 !important;
+                flex-shrink: 0 !important;
+            }
+            .day-heading-text h2 {
+                font-size: 13pt !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                color: #0f172a !important;
+            }
+            .day-heading-text p {
+                font-size: 9pt !important;
+                color: #64748b !important;
+                margin: 2pt 0 0 !important;
+            }
+
+            /* POI Cards */
+            .poi-card {
+                display: flex !important;
+                align-items: flex-start !important;
+                gap: 10pt !important;
+                padding: 8pt 10pt !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 8pt !important;
+                margin-bottom: 6pt !important;
+                background: #f8fafc !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+            .poi-step {
+                width: 26pt !important;
+                height: 26pt !important;
+                background: #dcfce7 !important;
+                color: #15803d !important;
+                font-size: 10pt !important;
+                font-weight: 700 !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                flex-shrink: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .poi-info { flex: 1 !important; }
+            .poi-name {
+                font-size: 11pt !important;
+                font-weight: 600 !important;
+                color: #0f172a !important;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
+            }
+            .poi-chips {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 4pt !important;
+                margin-top: 3pt !important;
+            }
+            .poi-chip {
+                font-size: 8pt !important;
+                padding: 1pt 6pt !important;
+                border-radius: 20pt !important;
+            }
+            .chip-type     { background: #dcfce7 !important; color: #15803d !important; }
+            .chip-duration { background: #dbeafe !important; color: #1d4ed8 !important; }
+            .chip-cost     { background: #ffedd5 !important; color: #c2410c !important; }
+            .chip-free     { background: #dcfce7 !important; color: #15803d !important; }
+
+            /* Timeline connector — hide in print */
+            .poi-timeline::before { display: none !important; }
+
+            /* Budget section */
+            #budgetSection {
+                page-break-before: always;
+                padding: 12pt 0;
+                border-top: 2px solid #e2e8f0;
+            }
+
+            /* Footer on every page */
+            @page {
+                size: A4;
+                margin: 18mm 16mm 22mm 16mm;
+                @bottom-center {
+                    content: "TravelPro Itinerary  ·  Page " counter(page) " of " counter(pages);
+                    font-size: 8pt;
+                    color: #94a3b8;
+                }
+            }
+        }
+
+        /* ══════════════════════════════════════
+           MAP DRAWER
+        ══════════════════════════════════════ */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.35);
+            z-index: 400;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .4s ease;
+            backdrop-filter: blur(2px);
+        }
+        .drawer-overlay.visible {
             opacity: 1;
-            transform: translateY(-50%) translateX(0);
+            pointer-events: all;
+        }
+
+        .map-drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;          /* off-screen by default */
+            width: var(--drawer-w);
+            height: 100vh;
+            background: var(--surface);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -8px 0 40px rgba(0,0,0,.18);
+            transition: right .4s cubic-bezier(.4,0,.2,1);
+        }
+        .map-drawer.open { right: 0; }
+
+        /* Drawer Header */
+        .drawer-header {
+            display: flex;
+            flex-direction: column;
+            gap: .75rem;
+            padding: 1rem 1.25rem .85rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+        .drawer-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .drawer-title {
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            color: var(--text-main);
+        }
+        .drawer-close {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-sub);
+            transition: background .15s, color .15s;
+        }
+        .drawer-close:hover { background: #fff0f0; color: #ef4444; border-color: #fca5a5; }
+
+        /* Day Filter Pills */
+        .day-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+        }
+        .day-toggle {
+            padding: .32rem .85rem;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            color: var(--text-sub);
+            font-size: .8rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all .18s;
+        }
+        .day-toggle:hover  { border-color: var(--primary); color: var(--primary); }
+        .day-toggle.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(36,85,59,.3);
+        }
+
+        /* Map container (fills drawer below header) */
+        #map {
+            flex: 1;
+            width: 100%;
+            min-height: 0;           /* required for flex shrink */
+            height: calc(100vh - 110px); /* explicit fallback — Leaflet MUST have a non-zero height */
+            background: #e5e7eb;
+        }
+
+        /* Leaflet popup custom style */
+        .leaflet-popup-content-wrapper {
+            border-radius: var(--radius-md) !important;
+            box-shadow: var(--shadow-md) !important;
+            padding: 0 !important;
+        }
+        .map-popup {
+            padding: .75rem 1rem;
+            min-width: 170px;
+        }
+        .map-popup-name { font-weight: 700; font-size: .9rem; margin-bottom: .2rem; }
+        .map-popup-type { font-size: .75rem; color: var(--text-sub); }
+
+        /* ══════════════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════════════ */
+        @media (max-width: 768px) {
+            :root { --drawer-w: 100vw; }
+            .itinerary-container { padding: 1.25rem 1rem 7rem; }
+            .top-nav { padding: 0 1rem; }
+            .trip-hero { padding: 1.5rem 1.25rem; }
+            .floating-map-btn { bottom: 1.25rem; right: 1.25rem; padding: .7rem 1.2rem; }
+        }
+        @media (max-width: 480px) {
+            .day-toggles { gap: .3rem; }
+            .day-toggle  { padding: .28rem .65rem; font-size: .75rem; }
         }
     </style>
 </head>
 
 <body>
+
+<!-- ══════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════ -->
+<nav class="top-nav">
+     <a href="dashboard.html" class="top-nav-logo"> <img src="assets/images/logo.png" alt="TravelPro icon" style="height:32px;width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-right:4px;"  >TravelPro </a>
+    <!-- <a href="index.html" class="top-nav-logo">✈ TravelPro</a> -->
+    <button class="back-link" onclick="window.location.href='dashboard.html'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M5 12L12 19M5 12L12 5"/></svg>
+        Dashboard
+    </button>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════ -->
+<main class="itinerary-container">
+
     <!-- Loading State -->
-    <div class="loading-state" id="loadingState">
-        <div class="loading-spinner"></div>
-        <p style="color: var(--color-gray-600);">Loading your itinerary...</p>
+    <div class="state-card" id="loadingState">
+        <div class="spinner"></div>
+        <p style="color:var(--text-sub);font-weight:500">Loading your itinerary…</p>
     </div>
 
-    <!-- Itinerary Content (hidden initially) -->
-    <div class="itinerary-container hidden" id="itineraryContent">
-        <!-- Action Bar -->
-        <div class="action-bar">
-            <a class="back-link" onclick="window.location.href='dashboard.html'">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                Back to Dashboard
-            </a>
+    <!-- Itinerary Content -->
+    <div id="itineraryContent" class="hidden">
+
+        <!-- Hero Header -->
+        <div class="trip-hero">
+            <div class="trip-hero-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+                AI-Generated Itinerary
+            </div>
+            <h1 id="tripTitle">Your Trip</h1>
+            <div class="trip-hero-meta">
+                <span id="tripDatesEl">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span id="tripDates"></span>
+                </span>
+                <span id="budgetMetaEl">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Budget: ₹<span id="totalBudget">–</span>
+                    &nbsp;·&nbsp; Est: ₹<span id="estimatedCost">–</span>
+                </span>
+            </div>
+            <div id="budgetStatus">
+                <span class="budget-pill ok" id="budgetPill">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                    <span id="budgetStatusText">Within Budget</span>
+                </span>
+            </div>
         </div>
-
-        <!-- Itinerary Header -->
-        <header class="itinerary-header">
-            <h1 id="tripTitle">Your Trip to Mumbai</h1>
-            <p id="tripDates" style="color: var(--color-gray-600); margin-bottom: var(--space-4);"></p>
-
-            <!-- Budget Status Badge -->
-            <div class="budget-status success" id="budgetStatus">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                </svg>
-                <span id="budgetStatusText">Within Budget</span>
-            </div>
-
-            <div style="margin-top: var(--space-4); font-size: var(--font-size-sm); color: var(--color-gray-600);">
-                <strong>Total Budget:</strong> ₹<span id="totalBudget">0</span> •
-                <strong>Estimated Cost:</strong> ₹<span id="estimatedCost">0</span>
-            </div>
-        </header>
 
         <!-- Day-by-Day Itinerary -->
-        <div id="itineraryDays">
-            <!-- Days will be dynamically inserted here -->
+        <div id="itineraryDays"></div>
+
+    </div><!-- /itineraryContent -->
+</main>
+
+<!-- ══════════════════════════════════════════
+     FLOATING MAP BUTTON
+══════════════════════════════════════════ -->
+<button class="floating-map-btn" id="openMapBtn" aria-label="View trip on map">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+        <line x1="8" y1="2" x2="8" y2="18"/>
+        <line x1="16" y1="6" x2="16" y2="22"/>
+    </svg>
+    View on Map
+</button>
+
+<!-- Save as PDF button -->
+<button class="floating-pdf-btn" id="savePdfBtn" onclick="savePDF()" aria-label="Save itinerary as PDF">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#24553b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Save as PDF
+</button>
+
+<!-- ══════════════════════════════════════════
+     MAP DRAWER
+══════════════════════════════════════════ -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<div class="map-drawer" id="mapDrawer" role="dialog" aria-label="Trip Map" aria-modal="true">
+
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+        <div class="drawer-header-top">
+            <div class="drawer-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                Trip Map
+            </div>
+            <button class="drawer-close" id="closeMapBtn" aria-label="Close map">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+
+        <!-- Day Filter Toggles (populated by JS) -->
+        <div class="day-toggles" id="dayToggles">
+            <button class="day-toggle active" data-day="all" id="toggle-all">All Days</button>
         </div>
     </div>
 
-    <!-- JavaScript -->
-    <script src="js/config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/wishlist.js"></script>
-    <script src="js/itinerary.js"></script>
-</body>
+    <!-- Leaflet Map -->
+    <div id="map"></div>
 
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script src="assets/leaflet.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/poi-images.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL STATE
+════════════════════════════════════════════════════════════════ */
+let _mapInstance     = null;
+let _allMarkers      = [];     // [{ marker, dayIndex: 0-based }]
+let _activeDay       = 'all';  // 'all' | '1' | '2' ...
+let _tripData        = null;   // resolved trip object
+
+/* ════════════════════════════════════════════════════════════════
+   BOOT — session guard then load
+════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!await validateSession()) return;
+    _bootItinerary();
+});
+
+async function _bootItinerary() {
+    const params = new URLSearchParams(window.location.search);
+    const mode   = params.get('mode');
+    const tripId = params.get('id');
+
+    // ── Custom itinerary built from history ───────────────────────────────
+    if (mode === 'custom') {
+        const raw = sessionStorage.getItem('customItinerary');
+        if (!raw) { window.location.href = 'trip-history.html'; return; }
+        try {
+            _tripData = JSON.parse(raw);
+            sessionStorage.removeItem('customItinerary'); // consume once
+
+            // Inject a "Custom Plan" badge into the hero title
+            _tripData._isCustom = true;
+
+            _renderHero(_tripData);
+            _renderDays(_tripData);
+            _buildDayToggles(_tripData.itinerary?.dayByDay || []);
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('itineraryContent').classList.remove('hidden');
+        } catch (e) {
+            window.location.href = 'trip-history.html';
+        }
+        return;
+    }
+
+    // ── Normal itinerary from backend ─────────────────────────────────────
+    if (!tripId) { window.location.href = 'dashboard.html'; return; }
+    try {
+        _tripData = await _loadTrip(tripId);
+        _renderHero(_tripData);
+        _renderDays(_tripData);
+        _buildDayToggles(_tripData.itinerary?.dayByDay || []);
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('itineraryContent').classList.remove('hidden');
+    } catch (err) {
+        console.error('Itinerary load failed:', err);
+        document.getElementById('loadingState').innerHTML =
+            `<p style="color:#ef4444;font-weight:600">⚠️ Failed to load itinerary.<br><small>${err.message}</small></p>
+             <button onclick="window.location.href='dashboard.html'" style="margin-top:1rem;padding:.5rem 1.2rem;border-radius:8px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:600">← Dashboard</button>`;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DATA LOADER
+════════════════════════════════════════════════════════════════ */
+async function _loadTrip(tripId) {
+    if (typeof MOCK_MODE !== 'undefined' && MOCK_MODE) {
+        return _mockTrip(tripId);
+    }
+    const token = getAuthToken();
+    const user  = JSON.parse(localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.USER_DATA) || '{}');
+    const endpoint = API_CONFIG.ENDPOINTS.GET_TRIP_BY_ID.replace(':id', tripId);
+    const res = await fetch(`${API_CONFIG.BACKEND_URL}${endpoint}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'X-User-Id': user.id ? String(user.id) : ''
+        }
+    });
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    return res.json();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RENDER — HERO HEADER
+════════════════════════════════════════════════════════════════ */
+function _renderHero(trip) {
+    document.title = `${trip.destination || 'Trip'} Itinerary – TravelPro`;
+    document.getElementById('tripTitle').textContent =
+        trip.title || `Your Trip to ${trip.destination}`;
+
+    // Custom plan badge
+    const titleEl = document.getElementById('tripTitle');
+    if (trip._isCustom) {
+        const badge = document.createElement('span');
+        badge.textContent = '✏️ Custom Plan';
+        badge.style.cssText = `
+            display:inline-block;margin-left:.6rem;
+            font-size:.68rem;font-weight:700;
+            background:linear-gradient(135deg,#24553b,#38a169);
+            color:#fff;padding:.2rem .55rem;border-radius:20px;
+            vertical-align:middle;letter-spacing:.04em;
+        `;
+        titleEl.appendChild(badge);
+    }
+
+    const fmt = d => d ? new Date(d).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '';
+    const dateStr = trip.startDate
+        ? `${fmt(trip.startDate)} – ${fmt(trip.endDate)}  (${trip.days} days)`
+        : `${trip.days} day${trip.days !== 1 ? 's' : ''} custom plan`;
+    document.getElementById('tripDates').textContent = dateStr;
+
+    const budget = trip.budget || trip.itinerary?.estimatedCost || 0;
+    const est    = trip.itinerary?.estimatedCost || budget;
+    document.getElementById('totalBudget').textContent   = budget.toLocaleString('en-IN');
+    document.getElementById('estimatedCost').textContent = est.toLocaleString('en-IN');
+
+    const pill = document.getElementById('budgetPill');
+    const ok   = trip.itinerary?.greenSignal !== false;
+    pill.className = `budget-pill ${ok ? 'ok' : 'over'}`;
+    document.getElementById('budgetStatusText').textContent = ok ? 'Within Budget ✓' : 'Over Budget';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RENDER — DAY SECTIONS + POI CARDS
+════════════════════════════════════════════════════════════════ */
+function _renderDays(trip) {
+    const days = trip.itinerary?.dayByDay || [];
+    const dest = trip.destination || '';
+    const container = document.getElementById('itineraryDays');
+    container.innerHTML = '';
+
+    days.forEach((dayData, i) => {
+        const section = _makeDaySection(dayData, i + 1, dest);
+        container.appendChild(section);
+    });
+}
+
+function _makeDaySection(dayData, n, dest) {
+    const wrap = document.createElement('div');
+    wrap.className = 'day-section';
+    wrap.dataset.day = n;
+
+    const dateStr = dayData.date
+        ? new Date(dayData.date).toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long'})
+        : `Day ${n}`;
+    const theme = dayData.theme || '';
+
+    wrap.innerHTML = `
+        <div class="day-heading">
+            <div class="day-badge">${n}</div>
+            <div class="day-heading-text">
+                <h2>Day ${n}${theme ? ` · ${theme}` : ''}</h2>
+                <p>${dateStr}</p>
+            </div>
+        </div>
+        <div class="poi-timeline" id="timeline-day-${n}"></div>
+    `;
+
+    const timeline = wrap.querySelector(`#timeline-day-${n}`);
+    (dayData.pois || []).forEach((poi, idx) => {
+        // Tag each POI with its day number so _makePoiCard can pass it to focusPOI
+        poi._dayNum = n;
+        const card = _makePoiCard(poi, idx + 1, dest);
+        timeline.appendChild(card);
+    });
+
+    return wrap;
+}
+
+function _makePoiCard(poi, step, dest) {
+    const card = document.createElement('div');
+    card.className = 'poi-card';
+
+    const chips = [
+        poi.type     ? `<span class="poi-chip chip-type">📍 ${_cap(poi.type)}</span>` : '',
+        poi.duration ? `<span class="poi-chip chip-duration">⏱ ${poi.duration}h</span>` : '',
+        poi.cost > 0
+            ? `<span class="poi-chip chip-cost">₹${Number(poi.cost).toLocaleString('en-IN')}</span>`
+            : `<span class="poi-chip chip-free">🆓 Free</span>`,
+    ].join('');
+
+    card.innerHTML = `
+        <div class="poi-step">${step}</div>
+        <div class="poi-info">
+            <div class="poi-name">${poi.name}</div>
+            <div class="poi-chips">${chips}</div>
+        </div>
+    `;
+
+    // "📍 Map" mini-button — fly to this POI in the drawer
+    const hasCoords = !!(poi.lat && poi.lon);
+    const mapBtn = document.createElement('button');
+    mapBtn.className = 'poi-map-btn';
+    mapBtn.title = hasCoords ? `Show ${poi.name} on map` : 'No coordinates available for this POI';
+    mapBtn.disabled = !hasCoords;
+    mapBtn.innerHTML = `
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+        </svg>
+        Map
+    `;
+    if (hasCoords) {
+        const dayNum = Math.ceil(step / 10) || 1;  // will be overridden below
+        mapBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            focusPOI(poi.lat, poi.lon, poi.name, poi.type, poi._dayNum || 1, poi.cost);
+        });
+    }
+    card.appendChild(mapBtn);
+
+    // Wishlist heart
+    if (typeof createWishlistButton === 'function') {
+        card.appendChild(createWishlistButton({
+            name: poi.name, type: poi.type || 'culture',
+            city: dest, cost: poi.cost || 0, duration: poi.duration || 2
+        }));
+    }
+
+    return card;
+}
+
+function _cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+/* ════════════════════════════════════════════════════════════════
+   MAP DRAWER — open / close
+════════════════════════════════════════════════════════════════ */
+const mapDrawer   = document.getElementById('mapDrawer');
+const overlay     = document.getElementById('drawerOverlay');
+const openBtn     = document.getElementById('openMapBtn');
+const closeBtn    = document.getElementById('closeMapBtn');
+
+openBtn.addEventListener('click', _openDrawer);
+closeBtn.addEventListener('click', _closeDrawer);
+overlay.addEventListener('click', _closeDrawer);
+
+// Close with Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeDrawer(); });
+
+function _openDrawer() {
+    mapDrawer.classList.add('open');
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+
+    if (!_mapInstance) {
+        // Wait for the CSS slide transition to fully finish BEFORE initialising
+        // Leaflet. If we init while right:-100% the container has 0 width and
+        // tiles get queued for the wrong viewport — causing the blank grey map.
+        setTimeout(() => {
+            _initMap();
+            // Extra tick: invalidate + re-centre after init so tiles render.
+            setTimeout(() => {
+                if (_mapInstance) {
+                    _mapInstance.invalidateSize({ pan: false });
+                    const c = _mapInstance.getCenter();
+                    _mapInstance.setView(c, _mapInstance.getZoom(), { animate: false });
+                }
+            }, 50);
+        }, 450);   // matches transition duration (0.4s) + safety margin
+    } else {
+        // Map already exists — just re-invalidate on re-open
+        setTimeout(() => {
+            _mapInstance.invalidateSize({ pan: false });
+            const c = _mapInstance.getCenter();
+            _mapInstance.setView(c, _mapInstance.getZoom(), { animate: false });
+        }, 450);
+    }
+}
+
+function _closeDrawer() {
+    mapDrawer.classList.remove('open');
+    overlay.classList.remove('visible');
+    document.body.style.overflow = '';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FOCUS A SINGLE POI ON THE MAP
+   Called by each per-card "Map" button.
+════════════════════════════════════════════════════════════════ */
+function focusPOI(lat, lon, name, type, dayNum, cost) {
+    // 1. Open the drawer if it's not already open
+    if (!mapDrawer.classList.contains('open')) {
+        _openDrawer();
+    }
+
+    const _fly = () => {
+        if (!_mapInstance) return;
+
+        // Fly to the POI with a closer zoom
+        _mapInstance.flyTo([lat, lon], 16, { duration: 0.8 });
+
+        // Find the matching marker and open its popup
+        setTimeout(() => {
+            const match = _allMarkers.find(m => {
+                const ll = m.marker.getLatLng();
+                return Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lon) < 0.0001;
+            });
+            if (match) {
+                match.marker.openPopup();
+            } else {
+                // Fallback: create a temporary highlight marker
+                const colors = ['#24553b','#2563eb','#d97706','#9333ea','#e11d48'];
+                const bg = colors[(dayNum - 1) % colors.length];
+                const temp = L.marker([lat, lon], {
+                    icon: L.divIcon({
+                        className: '',
+                        iconSize: [38, 38],
+                        iconAnchor: [19, 38],
+                        popupAnchor: [0, -40],
+                        html: `<div style="
+                            width:38px;height:38px;
+                            border-radius:50% 50% 50% 0;
+                            transform:rotate(-45deg);
+                            background:${bg};
+                            border:3px solid #fff;
+                            box-shadow:0 4px 14px rgba(0,0,0,.35);
+                            display:flex;align-items:center;justify-content:center;
+                        "><span style="transform:rotate(45deg);font-size:1rem;">📍</span></div>`
+                    })
+                }).addTo(_mapInstance);
+                temp.bindPopup(`
+                    <div class="map-popup">
+                        <div class="map-popup-name">${name}</div>
+                        <div class="map-popup-type">Day ${dayNum} · ${type || 'place'}</div>
+                        ${cost > 0
+                            ? `<div style="font-size:.73rem;color:#c2410c;margin-top:.2rem">₹${Number(cost).toLocaleString('en-IN')}</div>`
+                            : `<div style="font-size:.73rem;color:#15803d;margin-top:.2rem">Free</div>`
+                        }
+                    </div>`).openPopup();
+                // Remove temp marker when popup closes
+                temp.on('popupclose', () => _mapInstance.removeLayer(temp));
+            }
+        }, 850);  // wait for flyTo to complete
+    };
+
+    // If the map is already initialised, fly immediately (after drawer opens)
+    if (_mapInstance) {
+        setTimeout(_fly, mapDrawer.classList.contains('open') ? 0 : 460);
+    } else {
+        // Map not yet initialised — wait for _openDrawer to init it
+        setTimeout(_fly, 950);
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LEAFLET MAP INIT
+════════════════════════════════════════════════════════════════ */
+function _initMap() {
+    // Fix Leaflet's default icon paths to use our locally downloaded images
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+        iconUrl:       'assets/leaflet-images/marker-icon.png',
+        iconRetinaUrl: 'assets/leaflet-images/marker-icon-2x.png',
+        shadowUrl:     'assets/leaflet-images/marker-shadow.png',
+    });
+
+    // Default centre → Ranchi (fallback if no POI coordinates)
+    const defaultLat = 23.3441;
+    const defaultLon = 85.3096;
+
+    _mapInstance = L.map('map', {
+        center: [defaultLat, defaultLon],
+        zoom: 12,
+        zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 18,
+        crossOrigin: true,
+    }).addTo(_mapInstance);
+
+    // Place markers from trip data
+    _buildMarkers();
+}
+
+/* ── Custom marker icon ── */
+function _markerIcon(day, color) {
+    const colors = ['#24553b','#2563eb','#d97706','#9333ea','#e11d48'];
+    const bg = colors[(day - 1) % colors.length];
+    return L.divIcon({
+        className: '',
+        iconSize: [34, 34],
+        iconAnchor: [17, 34],
+        popupAnchor: [0, -34],
+        html: `
+            <div style="
+                width:34px;height:34px;border-radius:50% 50% 50% 0;
+                transform:rotate(-45deg);
+                background:${bg};
+                border:3px solid #fff;
+                box-shadow:0 3px 10px rgba(0,0,0,.3);
+                display:flex;align-items:center;justify-content:center;
+            ">
+                <span style="transform:rotate(45deg);color:#fff;font-weight:700;font-size:.7rem">${day}</span>
+            </div>`
+    });
+}
+
+function _buildMarkers() {
+    if (!_mapInstance || !_tripData) return;
+
+    const days = _tripData.itinerary?.dayByDay || [];
+    const bounds = [];
+
+    days.forEach((dayData, di) => {
+        const dayNum = di + 1;
+        (dayData.pois || []).forEach(poi => {
+            if (!poi.lat || !poi.lon) return;
+
+            const marker = L.marker([poi.lat, poi.lon], {
+                icon: _markerIcon(dayNum)
+            });
+
+            const popup = L.popup({ maxWidth: 240 }).setContent(`
+                <div class="map-popup">
+                    <div class="map-popup-name">${poi.name}</div>
+                    <div class="map-popup-type">Day ${dayNum} · ${_cap(poi.type || 'place')}</div>
+                    ${poi.cost > 0
+                        ? `<div style="font-size:.73rem;color:#c2410c;margin-top:.2rem">₹${Number(poi.cost).toLocaleString('en-IN')}</div>`
+                        : `<div style="font-size:.73rem;color:#15803d;margin-top:.2rem">Free</div>`}
+                </div>`);
+
+            marker.bindPopup(popup);
+            marker.addTo(_mapInstance);
+            _allMarkers.push({ marker, dayIndex: di, dayNum });
+            bounds.push([poi.lat, poi.lon]);
+        });
+    });
+
+    if (bounds.length > 0) {
+        _mapInstance.fitBounds(bounds, { padding: [40, 40] });
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DAY FILTER TOGGLES
+════════════════════════════════════════════════════════════════ */
+function _buildDayToggles(days) {
+    const container = document.getElementById('dayToggles');
+    container.innerHTML = `<button class="day-toggle active" data-day="all" id="toggle-all">All Days</button>`;
+
+    days.forEach((_, i) => {
+        const n = i + 1;
+        const btn = document.createElement('button');
+        btn.className = 'day-toggle';
+        btn.dataset.day = n;
+        btn.id = `toggle-day-${n}`;
+        btn.textContent = `Day ${n}`;
+        container.appendChild(btn);
+    });
+
+    container.addEventListener('click', e => {
+        const btn = e.target.closest('.day-toggle');
+        if (!btn) return;
+        container.querySelectorAll('.day-toggle').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _filterMarkers(btn.dataset.day);
+    });
+}
+
+function _filterMarkers(day) {
+    _activeDay = day;
+    _allMarkers.forEach(({ marker, dayNum }) => {
+        if (day === 'all' || String(dayNum) === String(day)) {
+            if (!_mapInstance.hasLayer(marker)) marker.addTo(_mapInstance);
+        } else {
+            if (_mapInstance.hasLayer(marker))  _mapInstance.removeLayer(marker);
+        }
+    });
+
+    // Refit bounds to visible markers
+    const visible = _allMarkers
+        .filter(({ dayNum }) => day === 'all' || String(dayNum) === String(day))
+        .map(({ marker }) => marker.getLatLng());
+    if (visible.length > 0) {
+        _mapInstance.fitBounds(visible.map(ll => [ll.lat, ll.lng]), { padding: [40, 40] });
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOCK DATA — used when MOCK_MODE = true (dev / no trip ID)
+════════════════════════════════════════════════════════════════ */
+function _mockTrip(tripId) {
+    // Try localStorage first
+    const trips = JSON.parse(localStorage.getItem(
+        (typeof APP_CONSTANTS !== 'undefined' ? APP_CONSTANTS.STORAGE_KEYS.USER_TRIPS : 'userTrips') || '[]'
+    ) || '[]');
+    const saved = trips.find(t => String(t.id) === String(tripId));
+    if (saved) return Promise.resolve(saved);
+
+    // Fallback demo data centered on Ranchi
+    return Promise.resolve({
+        id: 'demo',
+        title: 'Ranchi Weekend Escape',
+        destination: 'Ranchi',
+        days: 3,
+        budget: 15000,
+        startDate: '2026-04-18',
+        endDate:   '2026-04-20',
+        itinerary: {
+            greenSignal:   true,
+            estimatedCost: 11800,
+            dayByDay: [
+                {
+                    date: '2026-04-18',
+                    theme: 'Culture & History',
+                    pois: [
+                        { name: 'Ratu Fort',           type: 'history',   lat: 23.4032, lon: 85.2698, duration: 2, cost: 50  },
+                        { name: 'Jagannath Temple',    type: 'culture',   lat: 23.3612, lon: 85.3050, duration: 1.5, cost: 0 },
+                        { name: 'Morabadi Museum',     type: 'museum',    lat: 23.3500, lon: 85.3070, duration: 2, cost: 30  },
+                    ]
+                },
+                {
+                    date: '2026-04-19',
+                    theme: 'Nature & Adventure',
+                    pois: [
+                        { name: 'Dassam Falls',        type: 'nature',    lat: 23.0924, lon: 85.5296, duration: 3, cost: 20  },
+                        { name: 'Hundru Falls',        type: 'adventure', lat: 23.3370, lon: 85.6240, duration: 3, cost: 20  },
+                        { name: 'Rock Garden',         type: 'nature',    lat: 23.3750, lon: 85.3250, duration: 1.5, cost: 50 },
+                    ]
+                },
+                {
+                    date: '2026-04-20',
+                    theme: 'Food & Nightlife',
+                    pois: [
+                        { name: 'Hotspot Market',      type: 'shopping',  lat: 23.3612, lon: 85.3300, duration: 2, cost: 800 },
+                        { name: 'Bawarchi Restaurant', type: 'food',      lat: 23.3530, lon: 85.3190, duration: 1.5, cost: 400 },
+                        { name: 'Chhatt Talab',        type: 'nature',    lat: 23.3750, lon: 85.2900, duration: 1, cost: 0  },
+                    ]
+                },
+            ]
+        }
+    });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LEGACY COMPATIBILITY (itinerary.js expects these IDs)
+════════════════════════════════════════════════════════════════ */
+// Expose renderItinerary shim so old itinerary.js callers still work
+function renderItinerary(trip) {
+    _tripData = trip;
+    _renderHero(trip);
+    _renderDays(trip);
+    _buildDayToggles(trip.itinerary?.dayByDay || []);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SAVE AS PDF
+   Uses the browser's native print dialog. In Chrome/Edge, choosing
+   "Save as PDF" will name the file based on document.title, so we
+   temporarily set it to "itinerary" so the saved file is itinerary.pdf
+════════════════════════════════════════════════════════════════ */
+function savePDF() {
+    const btn    = document.getElementById('savePdfBtn');
+    const dest   = _tripData?.destination || 'Trip';
+    const days   = _tripData?.days || '';
+
+    // Update button to show feedback
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Preparing PDF…`;
+    btn.disabled = true;
+
+    // Force title so browser names the PDF "itinerary.pdf"
+    const prevTitle  = document.title;
+    document.title   = 'itinerary';
+
+    // Small delay so the button UI updates before print dialog blocks JS
+    setTimeout(() => {
+        window.print();
+
+        // Restore everything after the dialog closes
+        document.title  = prevTitle;
+        btn.innerHTML   = origHTML;
+        btn.disabled    = false;
+    }, 120);
+}
+</script>
+
+</body>
 </html>

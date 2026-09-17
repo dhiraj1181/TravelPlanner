@@ -30,24 +30,22 @@ public class TripPlanRequest {
     private String title;
 
     /**
-     * Trip start date
+     * Trip start date — validated by the frontend; no server-side @FutureOrPresent
+     * to avoid UTC vs IST clock skew rejecting valid Indian dates.
      */
     @NotNull(message = "Start date is required")
-    @FutureOrPresent(message = "Start date must be today or in the future")
     private LocalDate startDate;
 
     /**
-     * Trip end date (must be >= start date)
+     * Trip end date — validated by the frontend; no @FutureOrPresent for same reason.
      */
     @NotNull(message = "End date is required")
-    @FutureOrPresent(message = "End date must be today or in the future")
     private LocalDate endDate;
 
     /**
-     * User's budget (in USD)
+     * User's budget in INR (validated >0 on frontend)
      */
     @NotNull(message = "Budget is required")
-    @DecimalMin(value = "100.0", message = "Budget must be at least $100")
     private BigDecimal budget;
 
     /**
